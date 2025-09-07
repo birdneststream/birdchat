@@ -1,4 +1,10 @@
-# HexChat
+# BirdChat
+
+This is a fork from the now archived hexchat [https://github.com/hexchat/hexchat](https://github.com/hexchat/hexchat). It is called birdchat and is an IRC client for people who are birds in real life.
+
+It contains [99 Color Support](https://github.com/hexchat/hexchat/pull/2456) thanks to `chzchzchz` which the original hexchat author did not want to merge in for some reason.
+
+Here is the original `readme.md` contents.
 
 HexChat is an IRC client for Windows and UNIX-like operating systems.  
 See [IRCHelp.org](http://irchelp.org) for information about IRC in general.  
