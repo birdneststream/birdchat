@@ -2604,7 +2604,7 @@ gtk_xtext_render_flush (GtkXText * xtext, int x, int y, unsigned char *str,
 		xtext->draw_buf = pix;
 	}
 
-	dofill = TRUE;
+	dofill = xtext->backcolor;
 
 	/* backcolor is always handled by XDrawImageString */
 	if (!xtext->backcolor && xtext->pixmap)
