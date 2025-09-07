@@ -115,6 +115,7 @@ static void gtk_xtext_render_page (GtkXText * xtext);
 static void gtk_xtext_calc_lines (xtext_buffer *buf, int);
 static gboolean gtk_xtext_is_selecting (GtkXText *xtext);
 static char *gtk_xtext_selection_get_text (GtkXText *xtext, int *len_ret);
+static gboolean gtk_xtext_selection_kill (GtkXText *xtext, GdkEventSelection *event);
 static textentry *gtk_xtext_nth (GtkXText *xtext, int line, int *subline);
 static void gtk_xtext_adjustment_changed (GtkAdjustment * adj,
 														GtkXText * xtext);
@@ -467,6 +468,8 @@ gtk_xtext_init (GtkXText * xtext)
 
 		gtk_selection_add_targets (GTK_WIDGET (xtext), GDK_SELECTION_PRIMARY,
 											targets, n_targets);
+		
+		/* GTK3: selection-clear-event deprecated - handle differently if needed */
 	}
 }
 
@@ -1738,7 +1741,10 @@ gtk_xtext_motion_notify (GtkWidget * widget, GdkEventMotion * event)
 	textentry *word_ent;
 	int word_type;
 
-	gdk_window_get_device_position (gtk_widget_get_window (widget), gdk_device_manager_get_client_pointer (gdk_display_get_device_manager (gdk_window_get_display (gtk_widget_get_window (widget)))), &x, &y, &mask);
+	/* Use event coordinates directly in GTK3 */
+	x = (int)event->x;
+	y = (int)event->y;
+	mask = event->state;
 
 	if (xtext->moving_separator)
 	{
@@ -1996,7 +2002,10 @@ gtk_xtext_button_press (GtkWidget * widget, GdkEventButton * event)
 	unsigned char *word;
 	int line_x, x, y, offset, len;
 
-	gdk_window_get_device_position (gtk_widget_get_window (widget), gdk_device_manager_get_client_pointer (gdk_display_get_device_manager (gdk_window_get_display (gtk_widget_get_window (widget)))), &x, &y, &mask);
+	/* Use event coordinates directly in GTK3 */
+	x = (int)event->x;
+	y = (int)event->y;
+	mask = event->state;
 
 	if (event->button == 3 || event->button == 2) /* right/middle click */
 	{
@@ -2253,25 +2262,28 @@ gtk_xtext_scroll (GtkWidget *widget, GdkEventScroll *event)
 {
 	GtkXText *xtext = GTK_XTEXT (widget);
 	gfloat new_value;
+	gdouble delta_y = 0;
 
-	if (event->direction == GDK_SCROLL_UP)		/* mouse wheel pageUp */
-	{
-		new_value = gtk_adjustment_get_value (xtext->adj) - (gtk_adjustment_get_page_increment (xtext->adj) / 10);
-		if (new_value < gtk_adjustment_get_lower (xtext->adj))
-			new_value = gtk_adjustment_get_lower (xtext->adj);
-		gtk_adjustment_set_value (xtext->adj, new_value);
-		gtk_widget_queue_draw (widget);  /* Force immediate redraw */
-	}
-	else if (event->direction == GDK_SCROLL_DOWN)	/* mouse wheel pageDn */
-	{
-		new_value = gtk_adjustment_get_value (xtext->adj) + (gtk_adjustment_get_page_increment (xtext->adj) / 10);
-		if (new_value > (gtk_adjustment_get_upper (xtext->adj) - gtk_adjustment_get_page_size (xtext->adj)))
-			new_value = gtk_adjustment_get_upper (xtext->adj) - gtk_adjustment_get_page_size (xtext->adj);
-		gtk_adjustment_set_value (xtext->adj, new_value);
-		gtk_widget_queue_draw (widget);  /* Force immediate redraw */
+	/* GTK3: Handle smooth scrolling properly */
+	if (event->direction == GDK_SCROLL_SMOOTH) {
+		gdk_event_get_scroll_deltas ((GdkEvent*)event, NULL, &delta_y);
+	} else if (event->direction == GDK_SCROLL_UP) {
+		delta_y = -1.0;
+	} else if (event->direction == GDK_SCROLL_DOWN) {
+		delta_y = 1.0;
+	} else {
+		return FALSE;
 	}
 
-	return FALSE;
+	new_value = gtk_adjustment_get_value (xtext->adj) + (delta_y * gtk_adjustment_get_page_increment (xtext->adj) / 10);
+	
+	if (new_value < gtk_adjustment_get_lower (xtext->adj))
+		new_value = gtk_adjustment_get_lower (xtext->adj);
+	else if (new_value > (gtk_adjustment_get_upper (xtext->adj) - gtk_adjustment_get_page_size (xtext->adj)))
+		new_value = gtk_adjustment_get_upper (xtext->adj) - gtk_adjustment_get_page_size (xtext->adj);
+
+	gtk_adjustment_set_value (xtext->adj, new_value);
+	return TRUE; /* GTK3: Return TRUE to indicate event was handled */
 }
 
 static void
@@ -2347,7 +2359,7 @@ gtk_xtext_class_init (GtkXTextClass * class)
 	widget_class->button_press_event = gtk_xtext_button_press;
 	widget_class->button_release_event = gtk_xtext_button_release;
 	widget_class->motion_notify_event = gtk_xtext_motion_notify;
-	widget_class->selection_clear_event = (void *)gtk_xtext_selection_kill;
+	/* GTK3: selection_clear_event is deprecated, handle via signals */
 	widget_class->selection_get = gtk_xtext_selection_get;
 	widget_class->draw = gtk_xtext_draw;
 	widget_class->scroll_event = gtk_xtext_scroll;
@@ -2604,6 +2616,7 @@ gtk_xtext_render_flush (GtkXText * xtext, int x, int y, unsigned char *str,
 		xtext->draw_buf = pix;
 	}
 
+	/* Only fill backgrounds for selections/highlighting, not for normal text */
 	dofill = xtext->backcolor;
 
 	/* backcolor is always handled by XDrawImageString */

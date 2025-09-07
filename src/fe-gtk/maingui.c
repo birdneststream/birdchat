@@ -2558,38 +2558,37 @@ mg_create_center (session *sess, session_gui *gui, GtkWidget *box)
 
 	if (prefs.hex_gui_win_swap)
 	{
-		gtk_paned_pack2 (GTK_PANED (gui->hpane_left), gui->vpane_left, FALSE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (gui->hpane_left), gui->vpane_left, FALSE, TRUE);
 		gtk_paned_pack1 (GTK_PANED (gui->hpane_left), gui->hpane_right, TRUE, TRUE);
 	}
 	else
 	{
-		gtk_paned_pack1 (GTK_PANED (gui->hpane_left), gui->vpane_left, FALSE, FALSE);
+		gtk_paned_pack1 (GTK_PANED (gui->hpane_left), gui->vpane_left, FALSE, TRUE);
 		gtk_paned_pack2 (GTK_PANED (gui->hpane_left), gui->hpane_right, TRUE, TRUE);
 	}
-	gtk_paned_pack2 (GTK_PANED (gui->hpane_right), gui->vpane_right, FALSE, FALSE);
+	gtk_paned_pack2 (GTK_PANED (gui->hpane_right), gui->vpane_right, FALSE, TRUE);
 
 	gtk_container_add (GTK_CONTAINER (box), gui->hpane_left);
 	
 	/* FORCE treeview and scrolledwindow to expand to full width */
 	GtkCssProvider *css_provider = gtk_css_provider_new();
 	const gchar *css_data = 
-		"paned { -GtkPaned-handle-size: 1; } "
 		"paned separator { "
 		"  min-width: 1px; "
 		"  min-height: 1px; "
 		"  background: #2e3436; "
 		"  border: none; "
-		"  margin: 0; "
-		"  padding: 0; "
+		"  margin: 0px; "
+		"  padding: 0px; "
 		"} "
 		"scrolledwindow { "
-		"  min-width: 100%; "
+		"  min-width: 100px; "
 		"} "
 		"treeview { "
-		"  min-width: 100%; "
+		"  min-width: 100px; "
 		"} "
 		"treeview column { "
-		"  min-width: 100%; "
+		"  min-width: 100px; "
 		"}";
 	gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
 	gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
@@ -2599,7 +2598,7 @@ mg_create_center (session *sess, session_gui *gui, GtkWidget *box)
 	gui->note_book = book = gtk_notebook_new ();
 	gtk_notebook_set_show_tabs (GTK_NOTEBOOK (book), FALSE);
 	gtk_notebook_set_show_border (GTK_NOTEBOOK (book), FALSE);
-	gtk_paned_pack1 (GTK_PANED (gui->hpane_right), book, TRUE, FALSE);
+	gtk_paned_pack1 (GTK_PANED (gui->hpane_right), book, TRUE, TRUE);
 
 	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_paned_pack1 (GTK_PANED (gui->vpane_right), hbox, TRUE, TRUE);
