@@ -110,6 +110,9 @@ test_cflags = [
   ['-Werror=format-security', '-Werror=format=1'],
   '-Werror=missing-include-dirs',
   '-Werror=date-time',
+  '-DGDK_DISABLE_DEPRECATED',
+  '-DGTK_DISABLE_DEPRECATED',
+  '-Wdeprecated-declarations',
 ]
 foreach cflag : test_cflags
   if cc.has_multi_arguments(cflag)

@@ -695,8 +695,10 @@ setup_headlabel (GtkWidget *tab, int row, int col, char *text)
 
 	label = gtk_label_new (NULL);
 	gtk_label_set_markup (GTK_LABEL (label), buf);
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (tab), label, col, col + 1, row, row + 1, 0, 0, 4, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, 4);
+	gtk_grid_attach (GTK_GRID (tab), label, col, row, 1, 1);
 }
 
 static void
@@ -716,34 +718,35 @@ setup_create_3oggle (GtkWidget *tab, int row, const setting *set)
 	int *offsets = (int *)set->list;
 
 	label = gtk_label_new (_(set->label));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
 	if (set->tooltip)
 	{
 		gtk_widget_set_tooltip_text (label, _(set->tooltip));
 	}
-	gtk_table_attach (GTK_TABLE (tab), label, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), label, 2, row, 1, 1);
 
 	wid = gtk_check_button_new ();
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (wid),
 											setup_get_int3 (&setup_prefs, offsets[0]));
 	g_signal_connect (G_OBJECT (wid), "toggled",
 							G_CALLBACK (setup_3oggle_cb), ((int *)&setup_prefs) + offsets[0]);
-	gtk_table_attach (GTK_TABLE (tab), wid, 3, 4, row, row + 1, 0, 0, 0, 0);
+	gtk_grid_attach (GTK_GRID (tab), wid, 3, row, 1, 1);
 
 	wid = gtk_check_button_new ();
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (wid),
 											setup_get_int3 (&setup_prefs, offsets[1]));
 	g_signal_connect (G_OBJECT (wid), "toggled",
 							G_CALLBACK (setup_3oggle_cb), ((int *)&setup_prefs) + offsets[1]);
-	gtk_table_attach (GTK_TABLE (tab), wid, 4, 5, row, row + 1, 0, 0, 0, 0);
+	gtk_grid_attach (GTK_GRID (tab), wid, 4, row, 1, 1);
 
 	wid = gtk_check_button_new ();
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (wid),
 											setup_get_int3 (&setup_prefs, offsets[2]));
 	g_signal_connect (G_OBJECT (wid), "toggled",
 							G_CALLBACK (setup_3oggle_cb), ((int *)&setup_prefs) + offsets[2]);
-	gtk_table_attach (GTK_TABLE (tab), wid, 5, 6, row, row + 1, 0, 0, 0, 0);
+	gtk_grid_attach (GTK_GRID (tab), wid, 5, row, 1, 1);
 }
 
 static void
@@ -781,8 +784,9 @@ setup_create_toggleR (GtkWidget *tab, int row, const setting *set)
 							G_CALLBACK (setup_toggle_cb), (gpointer)set);
 	if (set->tooltip)
 		gtk_widget_set_tooltip_text (wid, _(set->tooltip));
-	gtk_table_attach (GTK_TABLE (tab), wid, 4, 5, row, row + 1,
-							GTK_EXPAND | GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
+	gtk_widget_set_hexpand (wid, TRUE);
+	gtk_widget_set_halign (wid, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (tab), wid, 4, row, 1, 1);
 }
 
 static GtkWidget *
@@ -797,8 +801,8 @@ setup_create_toggleL (GtkWidget *tab, int row, const setting *set)
 							G_CALLBACK (setup_toggle_cb), (gpointer)set);
 	if (set->tooltip)
 		gtk_widget_set_tooltip_text (wid, _(set->tooltip));
-	gtk_table_attach (GTK_TABLE (tab), wid, 2, row==6 ? 6 : 4, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_margin_start (wid, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), wid, 2, row, row==6 ? 4 : 2, 1);
 
 	return wid;
 }
@@ -826,20 +830,20 @@ setup_spin_cb (GtkSpinButton *spin, const setting *set)
 static GtkWidget *
 setup_create_spin (GtkWidget *table, int row, const setting *set)
 {
-	GtkWidget *label, *wid, *rbox, *align;
+	GtkWidget *label, *wid, *rbox;
 	char *text;
 
 	label = gtk_label_new (_(set->label));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (table), label, 2, row, 1, 1);
 
-	align = gtk_alignment_new (0.0, 0.5, 0.0, 0.0);
-	gtk_table_attach (GTK_TABLE (table), align, 3, 4, row, row + 1,
-							GTK_EXPAND | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
-
-	rbox = gtk_hbox_new (0, 0);
-	gtk_container_add (GTK_CONTAINER (align), rbox);
+	rbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_widget_set_hexpand (rbox, TRUE);
+	gtk_widget_set_halign (rbox, GTK_ALIGN_START);
+	gtk_widget_set_valign (rbox, GTK_ALIGN_CENTER);
+	gtk_grid_attach (GTK_GRID (table), rbox, 3, row, 1, 1);
 
 	wid = gtk_spin_button_new_with_range (0, set->extra, 1);
 	g_object_set_data (G_OBJECT (wid), "lbl", label);
@@ -877,7 +881,7 @@ setup_apply_trans (int *tag)
 }
 
 static void
-setup_hscale_cb (GtkHScale *wid, const setting *set)
+setup_hscale_cb (GtkScale *wid, const setting *set)
 {
 	static int tag = 0;
 
@@ -895,17 +899,20 @@ setup_create_hscale (GtkWidget *table, int row, const setting *set)
 	GtkWidget *wid;
 
 	wid = gtk_label_new (_(set->label));
-	gtk_misc_set_alignment (GTK_MISC (wid), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), wid, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (wid, GTK_ALIGN_START);
+	gtk_widget_set_valign (wid, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (wid, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (table), wid, 2, row, 1, 1);
 
-	wid = gtk_hscale_new_with_range (0., 255., 1.);
+	wid = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0., 255., 1.);
 	gtk_scale_set_value_pos (GTK_SCALE (wid), GTK_POS_RIGHT);
 	gtk_range_set_value (GTK_RANGE (wid), setup_get_int (&setup_prefs, set));
 	g_signal_connect (G_OBJECT(wid), "value_changed",
 							G_CALLBACK (setup_hscale_cb), (gpointer)set);
-	gtk_table_attach (GTK_TABLE (table), wid, 3, 6, row, row + 1,
-							GTK_EXPAND | GTK_FILL, GTK_FILL, 0, 0);
+	gtk_widget_set_hexpand (wid, TRUE);
+	gtk_widget_set_halign (wid, GTK_ALIGN_FILL);
+	gtk_widget_set_valign (wid, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table), wid, 3, row, 3, 1);
 
 #ifndef WIN32 /* Windows always supports this */
 	/* Only used for transparency currently */
@@ -954,13 +961,13 @@ setup_create_radio (GtkWidget *table, int row, const setting *set)
 	GSList *group;
 
 	wid = gtk_label_new (_(set->label));
-	gtk_misc_set_alignment (GTK_MISC (wid), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), wid, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (wid, GTK_ALIGN_START);
+	gtk_widget_set_valign (wid, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (wid, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (table), wid, 2, row, 1, 1);
 
-	hbox = gtk_hbox_new (0, 0);
-	gtk_table_attach (GTK_TABLE (table), hbox, 3, 4, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
+	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_grid_attach (GTK_GRID (table), hbox, 3, row, 1, 1);
 
 	i = 0;
 	group = NULL;
@@ -1017,9 +1024,10 @@ setup_create_id_menu (GtkWidget *table, char *label, int row, char *dest)
 	};
 
 	wid = gtk_label_new (label);
-	gtk_misc_set_alignment (GTK_MISC (wid), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), wid, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (wid, GTK_ALIGN_START);
+	gtk_widget_set_valign (wid, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (wid, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (table), wid, 2, row, 1, 1);
 
 	wid = gtk_option_menu_new ();
 	menu = gtk_menu_new ();
@@ -1049,8 +1057,7 @@ setup_create_id_menu (GtkWidget *table, char *label, int row, char *dest)
 	gtk_option_menu_set_menu (GTK_OPTION_MENU (wid), menu);
 	gtk_option_menu_set_history (GTK_OPTION_MENU (wid), def);
 
-	gtk_table_attach (GTK_TABLE (table), wid, 3, 4, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
+	gtk_grid_attach (GTK_GRID (table), wid, 3, row, 1, 1);
 }
 
 */
@@ -1063,9 +1070,10 @@ setup_create_menu (GtkWidget *table, int row, const setting *set)
 	int i;
 
 	wid = gtk_label_new (_(set->label));
-	gtk_misc_set_alignment (GTK_MISC (wid), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), wid, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (wid, GTK_ALIGN_START);
+	gtk_widget_set_valign (wid, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (wid, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (table), wid, 2, row, 1, 1);
 
 	cbox = gtk_combo_box_text_new ();
 
@@ -1077,10 +1085,11 @@ setup_create_menu (GtkWidget *table, int row, const setting *set)
 	g_signal_connect (G_OBJECT (cbox), "changed",
 							G_CALLBACK (setup_menu_cb), (gpointer)set);
 
-	box = gtk_hbox_new (0, 0);
+	box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (box), cbox, 0, 0, 0);
-	gtk_table_attach (GTK_TABLE (table), box, 3, 4, row, row + 1,
-							GTK_EXPAND | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
+	gtk_widget_set_hexpand (box, TRUE);
+	gtk_widget_set_halign (box, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table), box, 3, row, 1, 1);
 }
 
 static void
@@ -1112,31 +1121,8 @@ setup_browsefile_cb (GtkWidget *button, GtkWidget *entry)
 }
 
 static void
-setup_fontsel_destroy (GtkWidget *button, GtkFontSelectionDialog *dialog)
+setup_fontsel_destroy (GtkWidget *button, GtkFontChooserDialog *dialog)
 {
-	font_dialog = NULL;
-}
-
-static void
-setup_fontsel_cb (GtkWidget *button, GtkFontSelectionDialog *dialog)
-{
-	GtkWidget *entry;
-	char *font_name;
-
-	entry = g_object_get_data (G_OBJECT (button), "e");
-	font_name = gtk_font_selection_dialog_get_font_name (dialog);
-
-	gtk_entry_set_text (GTK_ENTRY (entry), font_name);
-
-	g_free (font_name);
-	gtk_widget_destroy (GTK_WIDGET (dialog));
-	font_dialog = NULL;
-}
-
-static void
-setup_fontsel_cancel (GtkWidget *button, GtkFontSelectionDialog *dialog)
-{
-	gtk_widget_destroy (GTK_WIDGET (dialog));
 	font_dialog = NULL;
 }
 
@@ -1149,32 +1135,32 @@ setup_browsefolder_cb (GtkWidget *button, GtkEntry *entry)
 static void
 setup_browsefont_cb (GtkWidget *button, GtkWidget *entry)
 {
-	GtkFontSelection *sel;
-	GtkFontSelectionDialog *dialog;
-	GtkWidget *ok_button;
+	GtkFontChooserDialog *dialog;
+	gint result;
+	gchar *font_name;
 
-	dialog = (GtkFontSelectionDialog *) gtk_font_selection_dialog_new (_("Select font"));
+	dialog = (GtkFontChooserDialog *) gtk_font_chooser_dialog_new (_("Select font"), GTK_WINDOW (setup_window));
 	font_dialog = (GtkWidget *)dialog;	/* global var */
 
-	gtk_window_set_transient_for (GTK_WINDOW (font_dialog), GTK_WINDOW (setup_window));
-	gtk_window_set_modal (GTK_WINDOW (font_dialog), TRUE);
-
-	sel = (GtkFontSelection *) gtk_font_selection_dialog_get_font_selection (dialog);
-
+	/* Set current font if entry has text */
 	if (gtk_entry_get_text (GTK_ENTRY (entry))[0])
-		gtk_font_selection_set_font_name (sel, gtk_entry_get_text (GTK_ENTRY (entry)));
-
-	ok_button = gtk_font_selection_dialog_get_ok_button (dialog);
-	g_object_set_data (G_OBJECT (ok_button), "e", entry);
+		gtk_font_chooser_set_font (GTK_FONT_CHOOSER (dialog), gtk_entry_get_text (GTK_ENTRY (entry)));
 
 	g_signal_connect (G_OBJECT (dialog), "destroy",
 							G_CALLBACK (setup_fontsel_destroy), dialog);
-	g_signal_connect (G_OBJECT (ok_button), "clicked",
-							G_CALLBACK (setup_fontsel_cb), dialog);
-	g_signal_connect (G_OBJECT (gtk_font_selection_dialog_get_cancel_button (dialog)), "clicked",
-							G_CALLBACK (setup_fontsel_cancel), dialog);
 
-	gtk_widget_show (GTK_WIDGET (dialog));
+	result = gtk_dialog_run (GTK_DIALOG (dialog));
+
+	if (result == GTK_RESPONSE_OK) {
+		font_name = gtk_font_chooser_get_font (GTK_FONT_CHOOSER (dialog));
+		if (font_name) {
+			gtk_entry_set_text (GTK_ENTRY (entry), font_name);
+			g_free (font_name);
+		}
+	}
+
+	gtk_widget_destroy (GTK_WIDGET (dialog));
+	font_dialog = NULL;
 }
 
 static void
@@ -1212,9 +1198,8 @@ setup_entry_cb (GtkEntry *entry, setting *set)
 static void
 setup_create_label (GtkWidget *table, int row, const setting *set)
 {
-	gtk_table_attach (GTK_TABLE (table), setup_create_italic_label (_(set->label)),
-							set->extra ? 1 : 3, 5, row, row + 1, GTK_FILL,
-							GTK_SHRINK | GTK_FILL, 0, 0);
+	gtk_grid_attach (GTK_GRID (table), setup_create_italic_label (_(set->label)),
+							set->extra ? 1 : 3, row, set->extra ? 4 : 2, 1);
 }
 
 static GtkWidget *
@@ -1224,9 +1209,10 @@ setup_create_entry (GtkWidget *table, int row, const setting *set)
 	GtkWidget *wid, *bwid;
 
 	label = gtk_label_new (_(set->label));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (table), label, 2, row, 1, 1);
 
 	wid = gtk_entry_new ();
 	g_object_set_data (G_OBJECT (wid), "lbl", label);
@@ -1251,15 +1237,20 @@ setup_create_entry (GtkWidget *table, int row, const setting *set)
 		gtk_widget_set_sensitive (wid, FALSE);
 
 	if (set->type == ST_ENTRY)
-		gtk_table_attach (GTK_TABLE (table), wid, 3, 6, row, row + 1,
-								GTK_EXPAND | GTK_FILL, GTK_FILL, 0, 0);
+	{
+		gtk_widget_set_hexpand (wid, TRUE);
+		gtk_widget_set_halign (wid, GTK_ALIGN_FILL);
+		gtk_widget_set_valign (wid, GTK_ALIGN_FILL);
+		gtk_grid_attach (GTK_GRID (table), wid, 3, row, 3, 1);
+	}
 	else
 	{
-		gtk_table_attach (GTK_TABLE (table), wid, 3, 5, row, row + 1,
-								GTK_EXPAND | GTK_FILL, GTK_SHRINK, 0, 0);
+		gtk_widget_set_hexpand (wid, TRUE);
+		gtk_widget_set_halign (wid, GTK_ALIGN_FILL);
+		gtk_grid_attach (GTK_GRID (table), wid, 3, row, 2, 1);
 		bwid = gtk_button_new_with_label (_("Browse..."));
-		gtk_table_attach (GTK_TABLE (table), bwid, 5, 6, row, row + 1,
-								GTK_SHRINK | GTK_FILL, GTK_FILL, 0, 0);
+		gtk_widget_set_valign (bwid, GTK_ALIGN_FILL);
+		gtk_grid_attach (GTK_GRID (table), bwid, 5, row, 1, 1);
 		if (set->type == ST_EFILE)
 			g_signal_connect (G_OBJECT (bwid), "clicked",
 									G_CALLBACK (setup_browsefile_cb), wid);
@@ -1287,17 +1278,20 @@ setup_create_header (GtkWidget *table, int row, char *labeltext)
 
 	label = gtk_label_new (NULL);
 	gtk_label_set_markup (GTK_LABEL (label), buf);
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (table), label, 0, 4, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 5);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_top (label, 5);
+	gtk_widget_set_margin_bottom (label, 5);
+	gtk_grid_attach (GTK_GRID (table), label, 0, row, 4, 1);
 }
 
 static void
 setup_create_button (GtkWidget *table, int row, char *label, GCallback callback)
 {
 	GtkWidget *but = gtk_button_new_with_label (label);
-	gtk_table_attach (GTK_TABLE (table), but, 2, 3, row, row + 1,
-					GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 5);
+	gtk_widget_set_margin_top (but, 5);
+	gtk_widget_set_margin_bottom (but, 5);
+	gtk_grid_attach (GTK_GRID (table), but, 2, row, 1, 1);
 	g_signal_connect (G_OBJECT (but), "clicked", callback, NULL);
 }
 
@@ -1306,10 +1300,10 @@ setup_create_frame (void)
 {
 	GtkWidget *tab;
 
-	tab = gtk_table_new (3, 2, FALSE);
+	tab = gtk_grid_new ();
 	gtk_container_set_border_width (GTK_CONTAINER (tab), 6);
-	gtk_table_set_row_spacings (GTK_TABLE (tab), 2);
-	gtk_table_set_col_spacings (GTK_TABLE (tab), 3);
+	gtk_grid_set_row_spacing (GTK_GRID (tab), 2);
+	gtk_grid_set_column_spacing (GTK_GRID (tab), 3);
 
 	return tab;
 }
@@ -1401,18 +1395,20 @@ setup_create_page (const setting *set)
 	return tab;
 }
 
+
 static void
-setup_color_ok_cb (GtkWidget *button, GtkWidget *dialog)
+setup_color_response_cb (GtkWidget *dialog, gint response_id, gpointer user_data)
 {
-	GtkColorSelectionDialog *cdialog = GTK_COLOR_SELECTION_DIALOG (dialog);
-	GdkColor *col;
-	GdkColor old_color;
-	GtkStyle *style;
+	GdkRGBA *col;
+	GtkWidget *button;
 
-	col = g_object_get_data (G_OBJECT (button), "c");
-	old_color = *col;
+	if (response_id != GTK_RESPONSE_OK) {
+		gtk_widget_destroy (dialog);
+		return;
+	}
 
-	button = g_object_get_data (G_OBJECT (button), "b");
+	col = g_object_get_data (G_OBJECT (dialog), "c");
+	button = g_object_get_data (G_OBJECT (dialog), "b");
 
 	if (!GTK_IS_WIDGET (button))
 	{
@@ -1422,17 +1418,20 @@ setup_color_ok_cb (GtkWidget *button, GtkWidget *dialog)
 
 	color_change = TRUE;
 
-	gtk_color_selection_get_current_color (GTK_COLOR_SELECTION (gtk_color_selection_dialog_get_color_selection (cdialog)), col);
+	gtk_color_chooser_get_rgba (GTK_COLOR_CHOOSER (dialog), col);
 
-	gdk_colormap_alloc_color (gtk_widget_get_colormap (button), col, TRUE, TRUE);
-
-	style = gtk_style_new ();
-	style->bg[0] = *col;
-	gtk_widget_set_style (button, style);
-	g_object_unref (style);
-
-	/* is this line correct?? */
-	gdk_colormap_free_colors (gtk_widget_get_colormap (button), &old_color, 1);
+	/* Set background color using CSS provider */
+	{
+		GtkCssProvider *provider = gtk_css_provider_new();
+		GtkStyleContext *context = gtk_widget_get_style_context(button);
+		gchar *css = g_strdup_printf("* { background-color: rgb(%d, %d, %d); }",
+		                             (int)(col->red * 255), (int)(col->green * 255), (int)(col->blue * 255));
+		gtk_css_provider_load_from_data(provider, css, -1, NULL);
+		gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider),
+		                              GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+		g_free(css);
+		g_object_unref(provider);
+	}
 
 	gtk_widget_destroy (dialog);
 }
@@ -1440,42 +1439,32 @@ setup_color_ok_cb (GtkWidget *button, GtkWidget *dialog)
 static void
 setup_color_cb (GtkWidget *button, gpointer userdata)
 {
-	GtkWidget *dialog, *cancel_button, *ok_button, *help_button;
-	GtkColorSelectionDialog *cdialog;
-	GdkColor *color;
+	GtkWidget *dialog;
+	GdkRGBA *color;
 
 	color = &colors[GPOINTER_TO_INT (userdata)];
 
-	dialog = gtk_color_selection_dialog_new (_("Select color"));
-	cdialog = GTK_COLOR_SELECTION_DIALOG (dialog);
+	dialog = gtk_color_chooser_dialog_new (_("Select color"), GTK_WINDOW (setup_window));
 
-	g_object_get (G_OBJECT(cdialog), "cancel-button", &cancel_button,
-									"ok-button", &ok_button,
-									"help-button", &help_button, NULL);
+	/* Set the current color */
+	gtk_color_chooser_set_rgba (GTK_COLOR_CHOOSER (dialog), color);
 
-	gtk_widget_hide (help_button);
-	g_signal_connect (G_OBJECT (ok_button), "clicked",
-							G_CALLBACK (setup_color_ok_cb), dialog);
-	g_signal_connect (G_OBJECT (cancel_button), "clicked",
-							G_CALLBACK (gtkutil_destroy), dialog);
-	g_object_set_data (G_OBJECT (ok_button), "c", color);
-	g_object_set_data (G_OBJECT (ok_button), "b", button);
-	gtk_widget_set_sensitive (help_button, FALSE);
-	gtk_color_selection_set_current_color (GTK_COLOR_SELECTION (gtk_color_selection_dialog_get_color_selection (cdialog)), color);
+	/* Connect response signal */
+	g_signal_connect (dialog, "response", G_CALLBACK (setup_color_response_cb), NULL);
+
+	/* Store references for the callback */
+	g_object_set_data (G_OBJECT (dialog), "c", color);
+	g_object_set_data (G_OBJECT (dialog), "b", button);
+
 	gtk_window_set_transient_for (GTK_WINDOW (dialog), GTK_WINDOW (setup_window));
 	gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
 	gtk_widget_show (dialog);
-
-	g_object_unref (cancel_button);
-	g_object_unref (ok_button);
-	g_object_unref (help_button);
 }
 
 static void
 setup_create_color_button (GtkWidget *table, int num, int row, int col)
 {
 	GtkWidget *but;
-	GtkStyle *style;
 	char buf[64];
 
 	if (num > 31)
@@ -1487,14 +1476,21 @@ setup_create_color_button (GtkWidget *table, int num, int row, int col)
 	gtk_label_set_markup (GTK_LABEL (gtk_bin_get_child (GTK_BIN (but))), buf);
 	/* win32 build uses this to turn off themeing */
 	g_object_set_data (G_OBJECT (but), "hexchat-color", (gpointer)1);
-	gtk_table_attach (GTK_TABLE (table), but, col, col+1, row, row+1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
+	gtk_grid_attach (GTK_GRID (table), but, col, row, 1, 1);
 	g_signal_connect (G_OBJECT (but), "clicked",
 							G_CALLBACK (setup_color_cb), GINT_TO_POINTER (num));
-	style = gtk_style_new ();
-	style->bg[GTK_STATE_NORMAL] = colors[num];
-	gtk_widget_set_style (but, style);
-	g_object_unref (style);
+	/* Set background color using CSS provider */
+	{
+		GtkCssProvider *provider = gtk_css_provider_new();
+		GtkStyleContext *context = gtk_widget_get_style_context(but);
+		gchar *css = g_strdup_printf("* { background-color: rgb(%d, %d, %d); }",
+		                             (int)(colors[num].red * 255), (int)(colors[num].green * 255), (int)(colors[num].blue * 255));
+		gtk_css_provider_load_from_data(provider, css, -1, NULL);
+		gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider),
+		                              GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+		g_free(css);
+		g_object_unref(provider);
+	}
 }
 
 static void
@@ -1503,9 +1499,10 @@ setup_create_other_colorR (char *text, int num, int row, GtkWidget *tab)
 	GtkWidget *label;
 
 	label = gtk_label_new (text);
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (tab), label, 5, 9, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), label, 5, row, 4, 1);
 	setup_create_color_button (tab, num, row, 9);
 }
 
@@ -1515,9 +1512,10 @@ setup_create_other_color (char *text, int num, int row, GtkWidget *tab)
 	GtkWidget *label;
 
 	label = gtk_label_new (text);
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (tab), label, 2, 3, row, row + 1,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), label, 2, row, 1, 1);
 	setup_create_color_button (tab, num, row, 3);
 }
 
@@ -1527,29 +1525,31 @@ setup_create_color_page (void)
 	GtkWidget *tab, *box, *label;
 	int i;
 
-	box = gtk_vbox_new (FALSE, 0);
+	box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (box), 6);
 
-	tab = gtk_table_new (9, 2, FALSE);
+	tab = gtk_grid_new ();
 	gtk_container_set_border_width (GTK_CONTAINER (tab), 6);
-	gtk_table_set_row_spacings (GTK_TABLE (tab), 2);
-	gtk_table_set_col_spacings (GTK_TABLE (tab), 3);
+	gtk_grid_set_row_spacing (GTK_GRID (tab), 2);
+	gtk_grid_set_column_spacing (GTK_GRID (tab), 3);
 	gtk_container_add (GTK_CONTAINER (box), tab);
 
 	setup_create_header (tab, 0, N_("Text Colors"));
 
 	label = gtk_label_new (_("mIRC colors:"));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (tab), label, 2, 3, 1, 2,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), label, 2, 1, 1, 1);
 
 	for (i = 0; i < 16; i++)
 		setup_create_color_button (tab, i, 1, i+3);
 
 	label = gtk_label_new (_("Local colors:"));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (tab), label, 2, 3, 2, 3,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), label, 2, 2, 1, 1);
 
 	for (i = 16; i < 32; i++)
 		setup_create_color_button (tab, i, 2, (i+3) - 16);
@@ -1574,9 +1574,10 @@ setup_create_color_page (void)
 	setup_create_header (tab, 15, N_("Color Stripping"));
 
 	/* label = gtk_label_new (_("Strip colors from:"));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_table_attach (GTK_TABLE (tab), label, 2, 3, 16, 17,
-							GTK_SHRINK | GTK_FILL, GTK_SHRINK | GTK_FILL, LABEL_INDENT, 0); */
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, LABEL_INDENT);
+	gtk_grid_attach (GTK_GRID (tab), label, 2, 16, 1, 1); */
 
 	for (i = 0; i < 3; i++)
 	{
@@ -1769,11 +1770,11 @@ setup_create_sound_page (void)
 	GtkWidget *sound_play;
 	GtkTreeSelection *sel;
 
-	vbox1 = gtk_vbox_new (FALSE, 0);
+	vbox1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox1), 6);
 	gtk_widget_show (vbox1);
 
-	vbox2 = gtk_vbox_new (FALSE, 0);
+	vbox2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_widget_show (vbox2);
 	gtk_container_add (GTK_CONTAINER (vbox1), vbox2);
 
@@ -1794,48 +1795,39 @@ setup_create_sound_page (void)
 							G_CALLBACK (setup_snd_row_cb), NULL);
 	gtk_widget_show (sound_tree);
 	gtk_container_add (GTK_CONTAINER (scrolledwindow1), sound_tree);
-	gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (sound_tree), TRUE);
 
-	table1 = gtk_table_new (2, 3, FALSE);
+	table1 = gtk_grid_new ();
 	gtk_widget_show (table1);
 	gtk_box_pack_start (GTK_BOX (vbox2), table1, FALSE, TRUE, 8);
-	gtk_table_set_row_spacings (GTK_TABLE (table1), 2);
-	gtk_table_set_col_spacings (GTK_TABLE (table1), 4);
+	gtk_grid_set_row_spacing (GTK_GRID (table1), 2);
+	gtk_grid_set_column_spacing (GTK_GRID (table1), 4);
 
 	sound_label = gtk_label_new_with_mnemonic (_("Sound file:"));
 	gtk_widget_show (sound_label);
-	gtk_table_attach (GTK_TABLE (table1), sound_label, 0, 1, 0, 1,
-							(GtkAttachOptions) (GTK_FILL),
-							(GtkAttachOptions) (0), 0, 0);
-	gtk_misc_set_alignment (GTK_MISC (sound_label), 0, 0.5);
+	gtk_grid_attach (GTK_GRID (table1), sound_label, 0, 0, 1, 1);
+	gtk_widget_set_halign (sound_label, GTK_ALIGN_START);
+	gtk_widget_set_valign (sound_label, GTK_ALIGN_CENTER);
 
 	sndfile_entry = gtk_entry_new ();
 	g_signal_connect (G_OBJECT (sndfile_entry), "changed",
 							G_CALLBACK (setup_snd_changed_cb), sound_tree);
 	gtk_widget_show (sndfile_entry);
-	gtk_table_attach (GTK_TABLE (table1), sndfile_entry, 0, 1, 1, 2,
-							(GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
-							(GtkAttachOptions) (0), 0, 0);
+	gtk_widget_set_hexpand (sndfile_entry, TRUE);
+	gtk_widget_set_halign (sndfile_entry, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table1), sndfile_entry, 0, 1, 1, 1);
 
 	sound_browse = gtk_button_new_with_mnemonic (_("_Browse..."));
 	g_signal_connect (G_OBJECT (sound_browse), "clicked",
 							G_CALLBACK (setup_snd_browse_cb), sndfile_entry);
 	gtk_widget_show (sound_browse);
-	gtk_table_attach (GTK_TABLE (table1), sound_browse, 1, 2, 1, 2,
-							(GtkAttachOptions) (GTK_FILL),
-							(GtkAttachOptions) (0), 0, 0);
+	gtk_grid_attach (GTK_GRID (table1), sound_browse, 1, 1, 1, 1);
 
-#ifdef GTK_STOCK_MEDIA_PLAY
-	sound_play = gtk_button_new_from_stock (GTK_STOCK_MEDIA_PLAY);
-#else
 	sound_play = gtk_button_new_with_mnemonic (_("_Play"));
-#endif
+	gtk_button_set_image (GTK_BUTTON (sound_play), gtk_image_new_from_icon_name ("media-playback-start", GTK_ICON_SIZE_BUTTON));
 	g_signal_connect (G_OBJECT (sound_play), "clicked",
 							G_CALLBACK (setup_snd_play_cb), sndfile_entry);
 	gtk_widget_show (sound_play);
-	gtk_table_attach (GTK_TABLE (table1), sound_play, 2, 3, 1, 2,
-							(GtkAttachOptions) (GTK_FILL),
-							(GtkAttachOptions) (0), 0, 0);
+	gtk_grid_attach (GTK_GRID (table1), sound_play, 2, 1, 1, 1);
 
 	setup_snd_row_cb (sel, NULL);
 
@@ -1849,14 +1841,18 @@ setup_add_page (const char *title, GtkWidget *book, GtkWidget *tab)
 	GtkScrolledWindow *sw;
 	char buf[128];
 
-	vvbox = gtk_vbox_new (FALSE, 0);
+	vvbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 
 	/* label */
 	label = gtk_label_new (NULL);
 	g_snprintf (buf, sizeof (buf), "<b><big>%s</big></b>", _(title));
 	gtk_label_set_markup (GTK_LABEL (label), buf);
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (label), 2, 1);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+	gtk_widget_set_margin_start (label, 2);
+	gtk_widget_set_margin_end (label, 2);
+	gtk_widget_set_margin_top (label, 1);
+	gtk_widget_set_margin_bottom (label, 1);
 	gtk_box_pack_start (GTK_BOX (vvbox), label, FALSE, FALSE, 2);
 
 	gtk_container_add (GTK_CONTAINER (vvbox), tab);
@@ -1864,7 +1860,7 @@ setup_add_page (const char *title, GtkWidget *book, GtkWidget *tab)
 	sw = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new (NULL, NULL));
 	gtk_scrolled_window_set_shadow_type (sw, GTK_SHADOW_IN);
 	gtk_scrolled_window_set_policy (sw, GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_add_with_viewport (sw, vvbox);
+	gtk_container_add (GTK_CONTAINER (sw), vvbox);
 
 	viewport = gtk_bin_get_child (GTK_BIN(sw));
 	gtk_viewport_set_shadow_type (GTK_VIEWPORT(viewport), GTK_SHADOW_NONE);
@@ -2039,9 +2035,11 @@ setup_create_tree (GtkWidget *box, GtkWidget *book)
 static void
 setup_apply_entry_style (GtkWidget *entry)
 {
-	gtk_widget_modify_base (entry, GTK_STATE_NORMAL, &colors[COL_BG]);
-	gtk_widget_modify_text (entry, GTK_STATE_NORMAL, &colors[COL_FG]);
-	gtk_widget_modify_font (entry, input_style->font_desc);
+	/* Temporarily disabled for GTK3 migration - use CSS instead */
+	/* gtk_widget_modify_base (entry, GTK_STATE_NORMAL, &colors[COL_BG]);
+	gtk_widget_modify_text (entry, GTK_STATE_NORMAL, &colors[COL_FG]); */
+	/* Temporarily disabled for GTK3 migration */
+	/* gtk_widget_modify_font (entry, input_style->font_desc); */
 }
 
 static void
@@ -2049,18 +2047,20 @@ setup_apply_to_sess (session_gui *gui)
 {
 	mg_update_xtext (gui->xtext);
 
-	if (prefs.hex_gui_ulist_style)
-		gtk_widget_set_style (gui->user_tree, input_style);
+	/* Temporarily disabled for GTK3 migration - use CSS styling instead */
+	/* if (prefs.hex_gui_ulist_style)
+		gtk_widget_set_style (gui->user_tree, input_style); */
 
 	if (prefs.hex_gui_input_style)
 	{
-		extern char cursor_color_rc[];
+		/* Temporarily disabled for GTK3 migration - use CSS providers instead */
+		/* extern char cursor_color_rc[];
 		char buf[256];
 		sprintf (buf, cursor_color_rc,
-				(colors[COL_FG].red >> 8),
-				(colors[COL_FG].green >> 8),
-				(colors[COL_FG].blue >> 8));
-		gtk_rc_parse_string (buf);
+				(int)(colors[COL_FG].red * 255),
+				(int)(colors[COL_FG].green * 255),
+				(int)(colors[COL_FG].blue * 255));
+		gtk_rc_parse_string (buf); */
 
 		setup_apply_entry_style (gui->input_box);
 		setup_apply_entry_style (gui->limit_entry);
@@ -2298,27 +2298,29 @@ setup_window_open (void)
 	g_snprintf(buf, sizeof(buf), _("Preferences - %s"), _(DISPLAY_NAME));
 	win = gtkutil_window_new (buf, "prefs", 0, 600, 2);
 
-	vbox = gtk_vbox_new (FALSE, 5);
+	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 5);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 6);
 	gtk_container_add (GTK_CONTAINER (win), vbox);
 
-	hbox = gtk_hbox_new (FALSE, 4);
+	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
 	gtk_container_add (GTK_CONTAINER (vbox), hbox);
 
 	setup_create_tree (hbox, setup_create_pages (hbox));
 
 	/* prepare the button box */
-	hbbox = gtk_hbutton_box_new ();
+	hbbox = gtk_button_box_new (GTK_ORIENTATION_HORIZONTAL);
 	gtk_button_box_set_layout (GTK_BUTTON_BOX (hbbox), GTK_BUTTONBOX_END);
 	gtk_box_set_spacing (GTK_BOX (hbbox), 4);
 	gtk_box_pack_end (GTK_BOX (vbox), hbbox, FALSE, FALSE, 0);
 
-	cancel_button = wid = gtk_button_new_from_stock (GTK_STOCK_CANCEL);
+	cancel_button = wid = gtk_button_new_with_mnemonic (_("_Cancel"));
+	gtk_button_set_image (GTK_BUTTON (wid), gtk_image_new_from_icon_name ("dialog-cancel", GTK_ICON_SIZE_BUTTON));
 	g_signal_connect (G_OBJECT (wid), "clicked",
 							G_CALLBACK (gtkutil_destroy), win);
 	gtk_box_pack_start (GTK_BOX (hbbox), wid, FALSE, FALSE, 0);
 
-	wid = gtk_button_new_from_stock (GTK_STOCK_OK);
+	wid = gtk_button_new_with_mnemonic (_("_OK"));
+	gtk_button_set_image (GTK_BUTTON (wid), gtk_image_new_from_icon_name ("dialog-ok", GTK_ICON_SIZE_BUTTON));
 	g_signal_connect (G_OBJECT (wid), "clicked",
 							G_CALLBACK (setup_ok_cb), win);
 	gtk_box_pack_start (GTK_BOX (hbbox), wid, FALSE, FALSE, 0);

@@ -119,7 +119,7 @@ nick_command_parse (session *sess, char *cmd, char *nick, char *allnick)
 
 /*	if (sess->type == SESS_DIALOG)
 	{
-		buf = (char *)(GTK_ENTRY (sess->gui->topic_entry)->text);
+		buf = (char *)(gtk_entry_get_text (GTK_ENTRY (sess->gui->topic_entry)));
 		buf = strrchr (buf, '@');
 		if (buf)
 			host = buf + 1;
@@ -274,10 +274,11 @@ menu_quick_item (char *cmd, char *label, GtkWidget * menu, int flags,
 	{
 		if (icon)
 		{
-			/*if (flags & XCMENU_MARKUP)
-				item = gtk_image_menu_item_new_with_markup (label);
-			else*/
-				item = gtk_image_menu_item_new_with_mnemonic (label);
+			GtkWidget *box, *label_widget;
+			
+			item = gtk_menu_item_new ();
+			box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+			
 			img = NULL;
 			if (access (icon, R_OK) == 0)	/* try fullpath */
 				img = gtk_image_new_from_file (icon);
@@ -288,12 +289,33 @@ menu_quick_item (char *cmd, char *label, GtkWidget * menu, int flags,
 				if (access (path, R_OK) == 0)
 					img = gtk_image_new_from_file (path);
 				else
-					img = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_MENU);
+					img = gtk_image_new_from_icon_name (icon, GTK_ICON_SIZE_MENU);
 				g_free (path);
 			}
 
+			if (flags & XCMENU_MARKUP)
+			{
+				label_widget = gtk_label_new ("");
+				if (flags & XCMENU_MNEMONIC)
+					gtk_label_set_markup_with_mnemonic (GTK_LABEL (label_widget), label);
+				else
+					gtk_label_set_markup (GTK_LABEL (label_widget), label);
+			} else
+			{
+				if (flags & XCMENU_MNEMONIC)
+					label_widget = gtk_label_new_with_mnemonic (label);
+				else
+					label_widget = gtk_label_new (label);
+			}
+			
+			gtk_label_set_xalign (GTK_LABEL (label_widget), 0.0);
+			gtk_label_set_yalign (GTK_LABEL (label_widget), 0.5);
+			
 			if (img)
-				gtk_image_menu_item_set_image ((GtkImageMenuItem *)item, img);
+				gtk_box_pack_start (GTK_BOX (box), img, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box), label_widget, TRUE, TRUE, 0);
+			
+			gtk_container_add (GTK_CONTAINER (item), box);
 		}
 		else
 		{
@@ -301,9 +323,9 @@ menu_quick_item (char *cmd, char *label, GtkWidget * menu, int flags,
 			{
 				item = gtk_menu_item_new_with_label ("");
 				if (flags & XCMENU_MNEMONIC)
-					gtk_label_set_markup_with_mnemonic (GTK_LABEL (GTK_BIN (item)->child), label);
+					gtk_label_set_markup_with_mnemonic (GTK_LABEL (gtk_bin_get_child (GTK_BIN (item))), label);
 				else
-					gtk_label_set_markup (GTK_LABEL (GTK_BIN (item)->child), label);
+					gtk_label_set_markup (GTK_LABEL (gtk_bin_get_child (GTK_BIN (item))), label);
 			} else
 			{
 				if (flags & XCMENU_MNEMONIC)
@@ -352,7 +374,7 @@ menu_quick_sub (char *name, GtkWidget *menu, GtkWidget **sub_item_ret, int flags
 	if (flags & XCMENU_MARKUP)
 	{
 		sub_item = gtk_menu_item_new_with_label ("");
-		gtk_label_set_markup (GTK_LABEL (GTK_BIN (sub_item)->child), name);
+		gtk_label_set_markup (GTK_LABEL (gtk_bin_get_child (GTK_BIN (sub_item))), name);
 	}
 	else
 	{
@@ -392,7 +414,7 @@ toggle_cb (GtkWidget *item, char *pref_name)
 {
 	char buf[256];
 
-	if (GTK_CHECK_MENU_ITEM (item)->active)
+	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item)))
 		g_snprintf (buf, sizeof (buf), "set %s 1", pref_name);
 	else
 		g_snprintf (buf, sizeof (buf), "set %s 0", pref_name);
@@ -573,8 +595,10 @@ menu_popup (GtkWidget *menu, GdkEventButton *event, gpointer objtounref)
 	g_object_unref (menu);
 	g_signal_connect (G_OBJECT (menu), "selection-done",
 							G_CALLBACK (menu_destroy), objtounref);
-	gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,
-						 0, event ? event->time : 0);
+	if (event)
+		gtk_menu_popup_at_pointer (GTK_MENU (menu), (GdkEvent*)event);
+	else
+		gtk_menu_popup_at_pointer (GTK_MENU (menu), NULL);
 }
 
 static void
@@ -707,7 +731,7 @@ fe_userlist_update (session *sess, struct User *user)
 	g_signal_handlers_disconnect_by_func (nick_submenu, menu_nickinfo_cb, sess);
 
 	/* destroy all the old items */
-	items = ((GtkMenuShell *) nick_submenu)->children;
+	items = gtk_container_get_children (GTK_CONTAINER (nick_submenu));
 	while (items)
 	{
 		next = items->next;
@@ -837,8 +861,8 @@ menu_setting_foreach (void (*callback) (session *), int id, guint state)
 		{
 			if (sess->gui->is_tab)
 				maindone = TRUE;
-			if (id != -1)
-				GTK_CHECK_MENU_ITEM (sess->gui->menu_item[id])->active = state;
+			if (id != -1 && sess->gui->menu_item[id] && GTK_IS_CHECK_MENU_ITEM (sess->gui->menu_item[id]))
+				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (sess->gui->menu_item[id]), state);
 			if (callback)
 				callback (sess);
 		}
@@ -1168,7 +1192,7 @@ usermenu_create (GtkWidget *menu)
 static void
 usermenu_destroy (GtkWidget * menu)
 {
-	GList *items = ((GtkMenuShell *) menu)->children;
+	GList *items = gtk_container_get_children (GTK_CONTAINER (menu));
 	GList *next;
 
 	while (items)
@@ -1387,7 +1411,7 @@ menu_join_cb (GtkWidget *dialog, gint response, GtkEntry *entry)
 	switch (response)
 	{
 	case GTK_RESPONSE_ACCEPT:
-		menu_chan_join (NULL, entry->text);
+		menu_chan_join (NULL, gtk_entry_get_text (entry));
 		break;
 
 	case GTK_RESPONSE_HELP:
@@ -1412,15 +1436,16 @@ menu_join (GtkWidget * wid, gpointer none)
 	dialog = gtk_dialog_new_with_buttons (_("Join Channel"),
 									GTK_WINDOW (parent_window), 0,
 									_("Retrieve channel list"), GTK_RESPONSE_HELP,
-									GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
-									GTK_STOCK_OK, GTK_RESPONSE_ACCEPT,
+									_("_Cancel"), GTK_RESPONSE_REJECT,
+									_("_OK"), GTK_RESPONSE_ACCEPT,
 									NULL);
-	gtk_box_set_homogeneous (GTK_BOX (GTK_DIALOG (dialog)->vbox), TRUE);
+	gtk_box_set_homogeneous (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), TRUE);
 	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_MOUSE);
-	hbox = gtk_hbox_new (TRUE, 0);
+	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_box_set_homogeneous (GTK_BOX (hbox), TRUE);
 
 	entry = gtk_entry_new ();
-	GTK_ENTRY (entry)->editable = 0;	/* avoid auto-selection */
+	gtk_editable_set_editable (GTK_EDITABLE (entry), FALSE);	/* avoid auto-selection */
 	gtk_entry_set_text (GTK_ENTRY (entry), "#");
 	g_signal_connect (G_OBJECT (entry), "activate",
 						 	G_CALLBACK (menu_join_entry_cb), dialog);
@@ -1432,7 +1457,7 @@ menu_join (GtkWidget * wid, gpointer none)
 	g_signal_connect (G_OBJECT (dialog), "response",
 						   G_CALLBACK (menu_join_cb), entry);
 
-	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), hbox);
+	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), hbox);
 
 	gtk_widget_show_all (dialog);
 
@@ -1655,7 +1680,7 @@ static void
 menu_layout_cb (GtkWidget *item, gpointer none)
 {
 	prefs.hex_gui_tab_layout = 2;
-	if (GTK_CHECK_MENU_ITEM (item)->active)
+	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item)))
 		prefs.hex_gui_tab_layout = 0;
 
 	menu_change_layout ();
@@ -1670,7 +1695,7 @@ menu_apply_metres_cb (session *sess)
 static void
 menu_metres_off (GtkWidget *item, gpointer none)
 {
-	if (GTK_CHECK_MENU_ITEM (item)->active)
+	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item)))
 	{
 		prefs.hex_gui_lagometer = 0;
 		prefs.hex_gui_throttlemeter = 0;
@@ -1682,7 +1707,7 @@ menu_metres_off (GtkWidget *item, gpointer none)
 static void
 menu_metres_text (GtkWidget *item, gpointer none)
 {
-	if (GTK_CHECK_MENU_ITEM (item)->active)
+	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item)))
 	{
 		prefs.hex_gui_lagometer = 2;
 		prefs.hex_gui_throttlemeter = 2;
@@ -1694,7 +1719,7 @@ menu_metres_text (GtkWidget *item, gpointer none)
 static void
 menu_metres_graph (GtkWidget *item, gpointer none)
 {
-	if (GTK_CHECK_MENU_ITEM (item)->active)
+	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item)))
 	{
 		prefs.hex_gui_lagometer = 1;
 		prefs.hex_gui_throttlemeter = 1;
@@ -1706,7 +1731,7 @@ menu_metres_graph (GtkWidget *item, gpointer none)
 static void
 menu_metres_both (GtkWidget *item, gpointer none)
 {
-	if (GTK_CHECK_MENU_ITEM (item)->active)
+	if (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item)))
 	{
 		prefs.hex_gui_lagometer = 3;
 		prefs.hex_gui_throttlemeter = 3;
@@ -1776,7 +1801,7 @@ static struct mymenu mymenu[] = {
 	{N_("Network Li_st"), menu_open_server_list, (char *)&pix_book, M_MENUPIX, 0, 0, 1, GDK_KEY_s},
 	{0, 0, 0, M_SEP, 0, 0, 0},
 
-	{N_("_New"), 0, GTK_STOCK_NEW, M_MENUSUB, 0, 0, 1},
+	{N_("_New"), 0, "document-new", M_MENUSUB, 0, 0, 1},
 		{N_("Server Tab"), menu_newserver_tab, 0, M_MENUITEM, 0, 0, 1, GDK_KEY_t},
 		{N_("Channel Tab"), menu_newchannel_tab, 0, M_MENUITEM, 0, 0, 1},
 		{N_("Server Window"), menu_newserver_window, 0, M_MENUITEM, 0, 0, 1, GDK_KEY_n},
@@ -1784,14 +1809,14 @@ static struct mymenu mymenu[] = {
 		{0, 0, 0, M_END, 0, 0, 0},
 	{0, 0, 0, M_SEP, 0, 0, 0},
 
-	{N_("_Load Plugin or Script" ELLIPSIS), menu_loadplugin, GTK_STOCK_REVERT_TO_SAVED, M_MENUSTOCK, 0, 0, 1},
+	{N_("_Load Plugin or Script" ELLIPSIS), menu_loadplugin, "document-revert", M_MENUSTOCK, 0, 0, 1},
 	{0, 0, 0, M_SEP, 0, 0, 0},	/* 11 */
 #define DETACH_OFFSET (12)
-	{0, menu_detach, GTK_STOCK_REDO, M_MENUSTOCK, 0, 0, 1},	/* 12 */
+	{0, menu_detach, "edit-redo", M_MENUSTOCK, 0, 0, 1},	/* 12 */
 #define CLOSE_OFFSET (13)
-	{0, menu_close, GTK_STOCK_CLOSE, M_MENUSTOCK, 0, 0, 1},
+	{0, menu_close, "window-close", M_MENUSTOCK, 0, 0, 1},
 	{0, 0, 0, M_SEP, 0, 0, 0},
-	{N_("_Quit"), menu_quit, GTK_STOCK_QUIT, M_MENUSTOCK, 0, 0, 1, GDK_KEY_q},	/* 15 */
+	{N_("_Quit"), menu_quit, "application-exit", M_MENUSTOCK, 0, 0, 1, GDK_KEY_q},	/* 15 */
 
 	{N_("_View"), 0, 0, M_NEWMENU, 0, 0, 1},
 #define MENUBAR_OFFSET (17)
@@ -1817,10 +1842,10 @@ static struct mymenu mymenu[] = {
 	{N_ ("_Fullscreen"), menu_fullscreen_toggle, 0, M_MENUTOG, MENU_ID_FULLSCREEN, 0, 1, GDK_KEY_F11},
 
 	{N_("_Server"), 0, 0, M_NEWMENU, 0, 0, 1},
-	{N_("_Disconnect"), menu_disconnect, GTK_STOCK_DISCONNECT, M_MENUSTOCK, MENU_ID_DISCONNECT, 0, 1},
-	{N_("_Reconnect"), menu_reconnect, GTK_STOCK_CONNECT, M_MENUSTOCK, MENU_ID_RECONNECT, 0, 1},
-	{N_("_Join a Channel" ELLIPSIS), menu_join, GTK_STOCK_JUMP_TO, M_MENUSTOCK, MENU_ID_JOIN, 0, 1},
-	{N_("Channel _List"), menu_chanlist, GTK_STOCK_INDEX, M_MENUITEM, 0, 0, 1},
+	{N_("_Disconnect"), menu_disconnect, "network-disconnect", M_MENUSTOCK, MENU_ID_DISCONNECT, 0, 1},
+	{N_("_Reconnect"), menu_reconnect, "network-connect", M_MENUSTOCK, MENU_ID_RECONNECT, 0, 1},
+	{N_("_Join a Channel" ELLIPSIS), menu_join, "go-jump", M_MENUSTOCK, MENU_ID_JOIN, 0, 1},
+	{N_("Channel _List"), menu_chanlist, "view-list", M_MENUITEM, 0, 0, 1},
 	{0, 0, 0, M_SEP, 0, 0, 0},
 #define AWAY_OFFSET (41)
 	{N_("Marked _Away"), menu_away, 0, M_MENUTOG, MENU_ID_AWAY, 0, 1, GDK_KEY_a},
@@ -1828,7 +1853,7 @@ static struct mymenu mymenu[] = {
 	{N_("_Usermenu"), 0, 0, M_NEWMENU, MENU_ID_USERMENU, 0, 1},	/* 40 */
 
 	{N_("S_ettings"), 0, 0, M_NEWMENU, 0, 0, 1},
-	{N_("_Preferences"), menu_settings, GTK_STOCK_PREFERENCES, M_MENUSTOCK, 0, 0, 1},
+	{N_("_Preferences"), menu_settings, "preferences-system", M_MENUSTOCK, 0, 0, 1},
 	{0, 0, 0, M_SEP, 0, 0, 0},
 	{N_("Auto Replace"), menu_rpopup, 0, M_MENUITEM, 0, 0, 1},
 	{N_("CTCP Replies"), menu_ctcpguiopen, 0, M_MENUITEM, 0, 0, 1},
@@ -1854,18 +1879,18 @@ static struct mymenu mymenu[] = {
 	{N_("Reset Marker Line"), menu_resetmarker, 0, M_MENUITEM, 0, 0, 1, GDK_KEY_m},
 	{N_("Move to Marker Line"), menu_movetomarker, 0, M_MENUITEM, 0, 0, 1, GDK_KEY_M},
 	{N_("_Copy Selection"), menu_copy_selection, 0, M_MENUITEM, 0, 0, 1, GDK_KEY_C},
-	{N_("C_lear Text"), menu_flushbuffer, GTK_STOCK_CLEAR, M_MENUSTOCK, 0, 0, 1},
-	{N_("Save Text" ELLIPSIS), menu_savebuffer, GTK_STOCK_SAVE, M_MENUSTOCK, 0, 0, 1},
+	{N_("C_lear Text"), menu_flushbuffer, "edit-clear", M_MENUSTOCK, 0, 0, 1},
+	{N_("Save Text" ELLIPSIS), menu_savebuffer, "document-save", M_MENUSTOCK, 0, 0, 1},
 #define SEARCH_OFFSET (70)
-	{N_("Search"), 0, GTK_STOCK_JUSTIFY_LEFT, M_MENUSUB, 0, 0, 1},
-		{N_("Search Text" ELLIPSIS), menu_search, GTK_STOCK_FIND, M_MENUSTOCK, 0, 0, 1, GDK_KEY_f},
-		{N_("Search Next"   ), menu_search_next, GTK_STOCK_FIND, M_MENUSTOCK, 0, 0, 1, GDK_KEY_g},
-		{N_("Search Previous"   ), menu_search_prev, GTK_STOCK_FIND, M_MENUSTOCK, 0, 0, 1, GDK_KEY_G},
+	{N_("Search"), 0, "format-justify-left", M_MENUSUB, 0, 0, 1},
+		{N_("Search Text" ELLIPSIS), menu_search, "edit-find", M_MENUSTOCK, 0, 0, 1, GDK_KEY_f},
+		{N_("Search Next"   ), menu_search_next, "edit-find", M_MENUSTOCK, 0, 0, 1, GDK_KEY_g},
+		{N_("Search Previous"   ), menu_search_prev, "edit-find", M_MENUSTOCK, 0, 0, 1, GDK_KEY_G},
 		{0, 0, 0, M_END, 0, 0, 0},
 
 	{N_("_Help"), 0, 0, M_NEWMENU, 0, 0, 1},	/* 74 */
-	{N_("_Contents"), menu_docs, GTK_STOCK_HELP, M_MENUSTOCK, 0, 0, 1, GDK_KEY_F1},
-	{N_("_About"), menu_about, GTK_STOCK_ABOUT, M_MENUSTOCK, 0, 0, 1},
+	{N_("_Contents"), menu_docs, "help-contents", M_MENUSTOCK, 0, 0, 1, GDK_KEY_F1},
+	{N_("_About"), menu_about, "help-about", M_MENUSTOCK, 0, 0, 1},
 
 	{0, 0, 0, M_END, 0, 0, 0},
 };
@@ -1893,15 +1918,26 @@ menu_set_fullscreen (session_gui *gui, int full)
 GtkWidget *
 create_icon_menu (char *labeltext, void *stock_name, int is_stock)
 {
-	GtkWidget *item, *img;
+	GtkWidget *item, *img, *box, *label;
 
+	item = gtk_menu_item_new ();
+	box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+	
 	if (is_stock)
-		img = gtk_image_new_from_stock (stock_name, GTK_ICON_SIZE_MENU);
+		img = gtk_image_new_from_icon_name (stock_name, GTK_ICON_SIZE_MENU);
 	else
 		img = gtk_image_new_from_pixbuf (*((GdkPixbuf **)stock_name));
-	item = gtk_image_menu_item_new_with_mnemonic (labeltext);
-	gtk_image_menu_item_set_image ((GtkImageMenuItem *)item, img);
-	gtk_widget_show (img);
+	
+	label = gtk_label_new_with_mnemonic (labeltext);
+	gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
+	gtk_label_set_xalign (GTK_LABEL (label), 0.0);
+	gtk_label_set_yalign (GTK_LABEL (label), 0.5);
+	
+	gtk_box_pack_start (GTK_BOX (box), img, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
+	
+	gtk_container_add (GTK_CONTAINER (item), box);
+	gtk_widget_show_all (item);
 
 	return item;
 }
@@ -1920,7 +1956,7 @@ menu_canacaccel (GtkWidget *widget, guint signal_id, gpointer user_data)
 static GtkMenuItem *
 menu_find_item (GtkWidget *menu, char *name)
 {
-	GList *items = ((GtkMenuShell *) menu)->children;
+	GList *items = gtk_container_get_children (GTK_CONTAINER (menu));
 	GtkMenuItem *item;
 	GtkWidget *child;
 	const char *labeltext;
@@ -1928,7 +1964,7 @@ menu_find_item (GtkWidget *menu, char *name)
 	while (items)
 	{
 		item = items->data;
-		child = GTK_BIN (item)->child;
+		child = gtk_bin_get_child (GTK_BIN (item));
 		if (child)	/* separators arn't labels, skip them */
 		{
 			labeltext = g_object_get_data (G_OBJECT (item), "name");
@@ -2025,7 +2061,7 @@ menu_update_cb (GtkWidget *menu, menu_entry *me, char *target)
 		gtk_widget_set_sensitive (item, me->enable);
 		/* must do it without triggering the callback */
 		if (GTK_IS_CHECK_MENU_ITEM (item))
-			GTK_CHECK_MENU_ITEM (item)->active = me->state;
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), me->state);
 	}
 }
 
@@ -2034,7 +2070,7 @@ static void
 menu_radio_cb (GtkCheckMenuItem *item, menu_entry *me)
 {
 	me->state = 0;
-	if (item->active)
+	if (gtk_check_menu_item_get_active (item))
 		me->state = 1;
 
 	/* update the state, incase this was changed via right-click. */
@@ -2050,7 +2086,7 @@ static void
 menu_toggle_cb (GtkCheckMenuItem *item, menu_entry *me)
 {
 	me->state = 0;
-	if (item->active)
+	if (gtk_check_menu_item_get_active (item))
 		me->state = 1;
 
 	/* update the state, incase this was changed via right-click. */
@@ -2092,7 +2128,7 @@ menu_reorder (GtkMenu *menu, GtkWidget *item, int pos)
 		return;
 
 	if (pos < 0)	/* position offset from end/bottom */
-		gtk_menu_reorder_child (menu, item, (g_list_length (GTK_MENU_SHELL (menu)->children) + pos) - 1);
+		gtk_menu_reorder_child (menu, item, (g_list_length (gtk_container_get_children (GTK_CONTAINER (menu))) + pos) - 1);
 	else
 		gtk_menu_reorder_child (menu, item, pos);
 }
@@ -2158,7 +2194,7 @@ menu_add_sub (GtkWidget *menu, menu_entry *me)
 	{
 		pos = me->pos;
 		if (pos < 0)	/* position offset from end/bottom */
-			pos = g_list_length (GTK_MENU_SHELL (menu)->children) + pos;
+			pos = g_list_length (gtk_container_get_children (GTK_CONTAINER (menu))) + pos;
 		menu_quick_sub (me->label, menu, &item, me->markup ? XCMENU_MARKUP|XCMENU_MNEMONIC : XCMENU_MNEMONIC, pos);
 	}
 	return item;
@@ -2436,7 +2472,10 @@ normalitem:
 			item = gtk_check_menu_item_new_with_mnemonic (_(mymenu[i].text));
 togitem:
 			/* must avoid callback for Radio buttons */
-			GTK_CHECK_MENU_ITEM (item)->active = mymenu[i].state;
+			g_signal_handlers_block_by_func (item, mymenu[i].callback, NULL);
+			if (item && GTK_IS_CHECK_MENU_ITEM (item))
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), mymenu[i].state);
+			g_signal_handlers_unblock_by_func (item, mymenu[i].callback, NULL);
 			/*gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item),
 													 mymenu[i].state);*/
 			if (mymenu[i].key != 0)

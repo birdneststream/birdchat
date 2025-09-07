@@ -17,6 +17,7 @@
  */
 
 #include <string.h>
+#include <gtk/gtk.h>
 #include "../common/hexchat-plugin.h"
 #include "../common/hexchat.h"
 #include "../common/hexchatc.h"
@@ -61,7 +62,14 @@ typedef GdkPixbuf* TrayIcon;
 #define ICON_FILE pix_tray_fileoffer
 #define TIMEOUT 500
 
+/* GtkStatusIcon was deprecated in GTK3.14 and removed entirely from GTK3 */
+#if GTK_CHECK_VERSION(3,14,0)
+#define TRAY_ENABLED 0
+static gpointer sticon; /* stub pointer for GTK3 */
+#else
+#define TRAY_ENABLED 1
 static GtkStatusIcon *sticon;
+#endif
 static gint flash_tag;
 static TrayStatus tray_status;
 #ifdef WIN32
@@ -77,11 +85,15 @@ static int tray_priv_count = 0;
 static int tray_pub_count = 0;
 static int tray_hilight_count = 0;
 static int tray_file_count = 0;
+#if TRAY_ENABLED
 static int tray_restore_timer = 0;
+#endif
 
 
 void tray_apply_setup (void);
+#if TRAY_ENABLED
 static gboolean tray_menu_try_restore (void);
+#endif
 static void tray_cleanup (void);
 static void tray_init (void);
 
@@ -139,8 +151,11 @@ tray_count_networks (void)
 void
 fe_tray_set_tooltip (const char *text)
 {
+#if TRAY_ENABLED
 	if (sticon)
 		gtk_status_icon_set_tooltip_text (sticon, text);
+#endif
+	/* GTK3: Tray functionality disabled */
 }
 
 static void
@@ -170,7 +185,9 @@ tray_stop_flash (void)
 
 	if (sticon)
 	{
+#if TRAY_ENABLED
 		gtk_status_icon_set_from_pixbuf (sticon, ICON_NORMAL);
+#endif
 		nets = tray_count_networks ();
 		chans = tray_count_channels ();
 		if (nets)
@@ -204,6 +221,7 @@ tray_reset_counts (void)
 	tray_file_count = 0;
 }
 
+#if TRAY_ENABLED
 static int
 tray_timeout_cb (TrayIcon icon)
 {
@@ -230,6 +248,7 @@ tray_timeout_cb (TrayIcon icon)
 	}
 	return 1;
 }
+#endif
 
 static void
 tray_set_flash (TrayIcon icon)
@@ -238,8 +257,10 @@ tray_set_flash (TrayIcon icon)
 		return;
 
 	/* already flashing the same icon */
+#if TRAY_ENABLED
 	if (flash_tag && gtk_status_icon_get_pixbuf (sticon) == icon)
 		return;
+#endif
 
 	/* no flashing if window is focused */
 	if (tray_get_window_status () == WS_FOCUSED)
@@ -247,9 +268,11 @@ tray_set_flash (TrayIcon icon)
 
 	tray_stop_flash ();
 
+#if TRAY_ENABLED
 	gtk_status_icon_set_from_pixbuf (sticon, icon);
 	if (prefs.hex_gui_tray_blink)
 		flash_tag = g_timeout_add (TIMEOUT, (GSourceFunc) tray_timeout_cb, icon);
+#endif
 }
 
 void
@@ -268,8 +291,10 @@ fe_tray_set_flash (const char *filename1, const char *filename2, int tout)
 	if (filename2)
 		custom_icon2 = tray_icon_from_file (filename2);
 
+#if TRAY_ENABLED
 	gtk_status_icon_set_from_pixbuf (sticon, custom_icon1);
 	flash_tag = g_timeout_add (tout, (GSourceFunc) tray_timeout_cb, NULL);
+#endif
 	tray_status = TS_CUSTOM;
 }
 
@@ -310,7 +335,9 @@ fe_tray_set_file (const char *filename)
 	if (filename)
 	{
 		custom_icon1 = tray_icon_from_file (filename);
+#if TRAY_ENABLED
 		gtk_status_icon_set_from_pixbuf (sticon, custom_icon1);
+#endif
 		tray_status = TS_CUSTOM;
 	}
 }
@@ -372,6 +399,7 @@ tray_menu_restore_cb (GtkWidget *item, gpointer userdata)
 	tray_toggle_visibility (FALSE);
 }
 
+#if TRAY_ENABLED
 static void
 tray_menu_notify_cb (GObject *tray, GParamSpec *pspec, gpointer user_data)
 {
@@ -391,7 +419,9 @@ tray_menu_notify_cb (GObject *tray, GParamSpec *pspec, gpointer user_data)
 		}
 	}
 }
+#endif
 
+#if TRAY_ENABLED
 static gboolean
 tray_menu_try_restore (void)
 {
@@ -399,6 +429,7 @@ tray_menu_try_restore (void)
 	tray_init();
 	return TRUE;
 }
+#endif
 
 static void
 tray_menu_quit_cb (GtkWidget *item, gpointer userdata)
@@ -525,6 +556,7 @@ tray_menu_settings (GtkWidget * wid, gpointer none)
 	setup_open ();
 }
 
+#if TRAY_ENABLED
 static void
 tray_menu_cb (GtkWidget *widget, guint button, guint time, gpointer userdata)
 {
@@ -574,9 +606,9 @@ tray_menu_cb (GtkWidget *widget, guint button, guint time, gpointer userdata)
 	menu_add_plugin_items (menu, "\x5$TRAY", NULL);
 
 	tray_make_item (menu, NULL, tray_menu_quit_cb, NULL);
-	mg_create_icon_item (_("_Preferences"), GTK_STOCK_PREFERENCES, menu, tray_menu_settings, NULL);
+	mg_create_icon_item (_("_Preferences"), "preferences-system", menu, tray_menu_settings, NULL);
 	tray_make_item (menu, NULL, tray_menu_quit_cb, NULL);
-	mg_create_icon_item (_("_Quit"), GTK_STOCK_QUIT, menu, tray_menu_quit_cb, NULL);
+	mg_create_icon_item (_("_Quit"), "application-exit", menu, tray_menu_quit_cb, NULL);
 
 	g_object_ref (menu);
 	g_object_ref_sink (menu);
@@ -592,9 +624,20 @@ tray_menu_cb (GtkWidget *widget, guint button, guint time, gpointer userdata)
 	tray_menu_timer = g_timeout_add (500, (GSourceFunc)tray_check_hide, menu);
 #endif
 
+#if TRAY_ENABLED
 	gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL,
 						 userdata, button, time);
+#else
+	/* GTK3: Use newer popup method if available */
+#if GTK_CHECK_VERSION(3,22,0)
+	gtk_menu_popup_at_pointer (GTK_MENU (menu), NULL);
+#else
+	gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL,
+						 NULL, button, time);
+#endif
+#endif
 }
+#endif
 
 static void
 tray_init (void)
@@ -604,6 +647,7 @@ tray_init (void)
 	custom_icon1 = NULL;
 	custom_icon2 = NULL;
 
+#if TRAY_ENABLED
 	sticon = gtk_status_icon_new_from_pixbuf (ICON_NORMAL);
 	if (!sticon)
 		return;
@@ -616,6 +660,10 @@ tray_init (void)
 
 	g_signal_connect (G_OBJECT (sticon), "notify::embedded",
 							G_CALLBACK (tray_menu_notify_cb), NULL);
+#else
+	/* GTK3: Tray icon functionality disabled - GtkStatusIcon removed */
+	sticon = NULL;
+#endif
 }
 
 static int
@@ -749,7 +797,9 @@ tray_cleanup (void)
 
 	if (sticon)
 	{
+#if TRAY_ENABLED
 		g_object_unref ((GObject *)sticon);
+#endif
 		sticon = NULL;
 	}
 }
