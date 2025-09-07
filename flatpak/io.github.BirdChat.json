@@ -1,10 +1,10 @@
 {
-  "app-id": "io.github.Hexchat",
+  "app-id": "io.github.BirdChat",
   "branch": "stable",
   "runtime": "org.gnome.Platform",
   "runtime-version": "40",
   "sdk": "org.gnome.Sdk",
-  "command": "hexchat",
+  "command": "birdchat",
   "finish-args": [
     "--share=ipc",
     "--socket=x11",
@@ -17,11 +17,11 @@
     "--talk-name=org.mpris.MediaPlayer2.*"
   ],
   "add-extensions": {
-    "io.github.Hexchat.Plugin": {
+    "io.github.BirdChat.Plugin": {
       "version": "20.08",
       "directory": "extensions",
       "add-ld-path": "lib",
-      "merge-dirs": "lib/hexchat/plugins",
+      "merge-dirs": "lib/birdchat/plugins",
       "subdirectories": true,
       "no-autodownload": true,
       "autodelete": true
