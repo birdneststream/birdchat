@@ -433,7 +433,7 @@ plugin_load (session *sess, char *filename, char *arg)
 	if (!g_module_symbol (handle, "hexchat_plugin_init", (gpointer *)&init_func))
 	{
 		g_module_close (handle);
-		return _("No hexchat_plugin_init symbol; is this really a HexChat plugin?");
+		return _("No hexchat_plugin_init symbol; is this really a BirdChat plugin?");
 	}
 
 	/* find the plugin's deinit routine, if any */

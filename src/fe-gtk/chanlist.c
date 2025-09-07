@@ -482,7 +482,7 @@ chanlist_filereq_done (server *serv, char *file)
 	if (fh == -1)
 		return;
 
-	g_snprintf (buf, sizeof buf, "HexChat Channel List: %s - %s\n",
+	g_snprintf (buf, sizeof buf, "BirdChat Channel List: %s - %s\n",
 				 serv->servername, ctime (&t));
 	write (fh, buf, strlen (buf));
 

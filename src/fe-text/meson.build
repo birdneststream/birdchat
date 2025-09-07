@@ -1,4 +1,4 @@
-executable('hexchat-text',
+executable('birdchat-text',
   sources: [
     'fe-text.c',
   ],

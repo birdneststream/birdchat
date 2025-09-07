@@ -854,7 +854,7 @@ key_save_kbs (void)
 									 0x180, XOF_DOMODE);
 	if (fd < 0)
 		return 1;
-	write (fd, buf, g_snprintf (buf, 510, "# HexChat key bindings config file\n\n"));
+	write (fd, buf, g_snprintf (buf, 510, "# BirdChat key bindings config file\n\n"));
 
 	while (list)
 	{

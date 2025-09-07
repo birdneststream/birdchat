@@ -1491,7 +1491,7 @@ menu_noplugin_info (void)
 									"%m  =  machine info\n"\
                            "%n  =  your nick\n"\
 									"%t  =  time/date\n"\
-                           "%v  =  HexChat version\n"\
+                           "%v  =  BirdChat version\n"\
                            "%2  =  word 2\n"\
                            "%3  =  word 3\n"\
                            "&2  =  word 2 to the end of line\n"\
@@ -1538,7 +1538,7 @@ menu_noplugin_info (void)
                            "%s  =  the URL string\n\n"\
                            "Putting a ! in front of the command\n"\
                            "indicates it should be sent to a\n"\
-                           "shell instead of HexChat")
+                           "shell instead of BirdChat")
 
 static void
 menu_usercommands (void)
@@ -2501,7 +2501,7 @@ togitem:
 			menu_widgets[mymenu[i].id] = item;
 
 #ifdef HAVE_GTK_MAC
-		/* We want HexChat to be the app menu, not including Quit or HexChat itself */
+		/* We want BirdChat to be the app menu, not including Quit or BirdChat itself */
 		if (bar && item && i <= CLOSE_OFFSET + 1 && mymenu[i].id != MENU_ID_HEXCHAT)
 		{
 			if (!submenu || mymenu[i].type == M_MENUSUB)
