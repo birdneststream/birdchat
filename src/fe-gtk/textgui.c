@@ -33,7 +33,7 @@
 #include "../common/fe.h"
 #include "../common/text.h"
 #include "gtkutil.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "maingui.h"
 #include "palette.h"
 #include "textgui.h"

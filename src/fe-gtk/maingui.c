@@ -49,7 +49,7 @@
 #include "chanview.h"
 #include "pixmaps.h"
 #include "plugin-tray.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "sexy-spell-entry.h"
 #include "gtkutil.h"
 
@@ -2362,19 +2362,25 @@ mg_create_textarea (session *sess, GtkWidget *box)
 	g_signal_connect (G_OBJECT (xtext), "word_click",
 							G_CALLBACK (mg_word_clicked), NULL);
 
-	gui->vscrollbar = gtk_scrollbar_new (GTK_ORIENTATION_VERTICAL, GTK_XTEXT (xtext)->adj);
-	gtk_box_pack_start (GTK_BOX (inbox), gui->vscrollbar, FALSE, TRUE, 0);
-
-	gtk_drag_dest_set (gui->vscrollbar, 5, dnd_dest_targets, 2,
+	/* GtkScrolledWindow (our new xtext widget) provides its own scrollbar */
+	/* Get the vertical scrollbar from the scrolled window for drag-and-drop compatibility */
+	gui->vscrollbar = gtk_scrolled_window_get_vscrollbar (GTK_SCROLLED_WINDOW (xtext));
+	
+	/* Note: Don't pack the scrollbar since it's already managed by GtkScrolledWindow */
+	
+	/* Setup drag and drop on the scrollbar for compatibility */
+	if (gui->vscrollbar) {
+		gtk_drag_dest_set (gui->vscrollbar, 5, dnd_dest_targets, 2,
 							 GDK_ACTION_MOVE | GDK_ACTION_COPY | GDK_ACTION_LINK);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_begin",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_begin",
 							G_CALLBACK (mg_drag_begin_cb), NULL);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_drop",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_drop",
 							G_CALLBACK (mg_drag_drop_cb), NULL);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_motion",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_motion",
 							G_CALLBACK (mg_drag_motion_cb), gui->vscrollbar);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_end",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_end",
 							G_CALLBACK (mg_drag_end_cb), NULL);
+	}
 
 	gtk_drag_dest_set (gui->xtext, GTK_DEST_DEFAULT_ALL, dnd_targets, 1,
 							 GDK_ACTION_MOVE | GDK_ACTION_COPY | GDK_ACTION_LINK);

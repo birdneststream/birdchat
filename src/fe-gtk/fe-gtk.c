@@ -43,7 +43,7 @@
 #include "pixmaps.h"
 #include "chanlist.h"
 #include "joind.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "palette.h"
 #include "menu.h"
 #include "notifygui.h"

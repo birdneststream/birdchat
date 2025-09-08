@@ -39,7 +39,7 @@
 #include "palette.h"
 #include "maingui.h"
 #include "rawlog.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "fkeys.h"
 
 static void

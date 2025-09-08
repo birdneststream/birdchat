@@ -43,7 +43,7 @@
 #include "../common/notify.h"
 #include "../common/util.h"
 #include "../common/text.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "ascii.h"
 #include "banlist.h"
 #include "chanlist.h"
