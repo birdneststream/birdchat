@@ -361,9 +361,11 @@ gtk_xtext_append (xtext_buffer *buf, unsigned char *text, int len, time_t stamp)
 		buf->num_lines = buf->max_lines;
 	}
 
-	/* Simple auto-scroll: just scroll to end */
+	/* Always force scroll to bottom */
+	GtkTextMark *end_mark = gtk_text_buffer_get_insert(text_buffer);
 	gtk_text_buffer_get_end_iter (text_buffer, &iter);
-	gtk_text_view_scroll_to_iter(buf->xtext_view->text_view, &iter, 0.0, FALSE, 0.0, 0.0);
+	gtk_text_buffer_move_mark(text_buffer, end_mark, &iter);
+	gtk_text_view_scroll_mark_onscreen(buf->xtext_view->text_view, end_mark);
 
 	/* Cleanup */
 	irc_formatter_free (formatted);
@@ -422,9 +424,11 @@ gtk_xtext_append_indent (xtext_buffer *buf,
 		buf->num_lines = buf->max_lines;
 	}
 
-	/* Simple auto-scroll: just scroll to end */
+	/* Always force scroll to bottom */
+	GtkTextMark *end_mark = gtk_text_buffer_get_insert(text_buffer);
 	gtk_text_buffer_get_end_iter (text_buffer, &iter);
-	gtk_text_view_scroll_to_iter(buf->xtext_view->text_view, &iter, 0.0, FALSE, 0.0, 0.0);
+	gtk_text_buffer_move_mark(text_buffer, end_mark, &iter);
+	gtk_text_view_scroll_mark_onscreen(buf->xtext_view->text_view, end_mark);
 
 	/* Cleanup */
 	if (left_formatted) irc_formatter_free (left_formatted);
@@ -555,6 +559,13 @@ gtk_xtext_buffer_show (GtkXText *xtext, xtext_buffer *buf, int render)
 	
 	/* Update the xtext->text_buffer reference to the new buffer */
 	xtext->text_buffer = buf->text_buffer;
+	
+	/* Always scroll to bottom when switching buffers */
+	GtkTextIter iter;
+	GtkTextMark *end_mark = gtk_text_buffer_get_insert(buf->text_buffer);
+	gtk_text_buffer_get_end_iter(buf->text_buffer, &iter);
+	gtk_text_buffer_move_mark(buf->text_buffer, end_mark, &iter);
+	gtk_text_view_scroll_mark_onscreen(xtext->text_view, end_mark);
 	
 	if (render) {
 		gtk_xtext_refresh (xtext);

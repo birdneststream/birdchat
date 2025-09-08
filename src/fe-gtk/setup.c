@@ -1392,7 +1392,14 @@ setup_create_page (const setting *set)
 		setup_create_button (tab, row, _("Open Data Folder"), G_CALLBACK(open_data_cb));
 	}
 
-	return tab;
+	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
+	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
+	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
+	gtk_container_add (GTK_CONTAINER (scrolled), tab);
+	
+	return scrolled;
 }
 
 
@@ -1584,7 +1591,14 @@ setup_create_color_page (void)
 		setup_create_toggleL (tab, i + 16, &color_settings[i]);
 	}
 
-	return box;
+	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
+	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
+	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
+	gtk_container_add (GTK_CONTAINER (scrolled), box);
+	
+	return scrolled;
 }
 
 /* === GLOBALS for sound GUI === */
@@ -1831,7 +1845,14 @@ setup_create_sound_page (void)
 
 	setup_snd_row_cb (sel, NULL);
 
-	return vbox1;
+	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
+	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
+	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
+	gtk_container_add (GTK_CONTAINER (scrolled), vbox1);
+	
+	return scrolled;
 }
 
 static void
@@ -1935,7 +1956,7 @@ setup_create_pages (GtkWidget *box)
 
 	gtk_notebook_set_show_tabs (GTK_NOTEBOOK (book), FALSE);
 	gtk_notebook_set_show_border (GTK_NOTEBOOK (book), FALSE);
-	gtk_container_add (GTK_CONTAINER (box), book);
+	gtk_box_pack_start (GTK_BOX (box), book, TRUE, TRUE, 0);
 
 	return book;
 }
@@ -2303,7 +2324,7 @@ setup_window_open (void)
 	gtk_container_add (GTK_CONTAINER (win), vbox);
 
 	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
-	gtk_container_add (GTK_CONTAINER (vbox), hbox);
+	gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
 
 	setup_create_tree (hbox, setup_create_pages (hbox));
 
