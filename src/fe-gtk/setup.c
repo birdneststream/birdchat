@@ -1392,14 +1392,7 @@ setup_create_page (const setting *set)
 		setup_create_button (tab, row, _("Open Data Folder"), G_CALLBACK(open_data_cb));
 	}
 
-	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
-	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
-	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
-	gtk_container_add (GTK_CONTAINER (scrolled), tab);
-	
-	return scrolled;
+	return tab;
 }
 
 
