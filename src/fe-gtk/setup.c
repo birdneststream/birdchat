@@ -1584,14 +1584,7 @@ setup_create_color_page (void)
 		setup_create_toggleL (tab, i + 16, &color_settings[i]);
 	}
 
-	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
-	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
-	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
-	gtk_container_add (GTK_CONTAINER (scrolled), box);
-	
-	return scrolled;
+	return box;
 }
 
 /* === GLOBALS for sound GUI === */
@@ -1783,11 +1776,12 @@ setup_create_sound_page (void)
 
 	vbox2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_widget_show (vbox2);
-	gtk_container_add (GTK_CONTAINER (vbox1), vbox2);
+	gtk_box_pack_start (GTK_CONTAINER (vbox1), vbox2, TRUE, TRUE, 0);
 
 	scrolledwindow1 = gtk_scrolled_window_new (NULL, NULL);
 	gtk_widget_show (scrolledwindow1);
-	gtk_container_add (GTK_CONTAINER (vbox2), scrolledwindow1);
+	//gtk_container_add (GTK_CONTAINER (vbox2), scrolledwindow1);
+	gtk_box_pack_start(GTK_BOX(vbox2), scrolledwindow1, TRUE, TRUE, 0);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow1),
 											  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolledwindow1),
@@ -1805,7 +1799,7 @@ setup_create_sound_page (void)
 
 	table1 = gtk_grid_new ();
 	gtk_widget_show (table1);
-	gtk_box_pack_start (GTK_BOX (vbox2), table1, FALSE, TRUE, 8);
+	gtk_box_pack_end (GTK_BOX (vbox2), table1, FALSE, TRUE, 8);
 	gtk_grid_set_row_spacing (GTK_GRID (table1), 2);
 	gtk_grid_set_column_spacing (GTK_GRID (table1), 4);
 
@@ -1838,14 +1832,7 @@ setup_create_sound_page (void)
 
 	setup_snd_row_cb (sel, NULL);
 
-	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
-	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
-	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
-	gtk_container_add (GTK_CONTAINER (scrolled), vbox1);
-	
-	return scrolled;
+	return vbox1;
 }
 
 static void
@@ -1869,7 +1856,7 @@ setup_add_page (const char *title, GtkWidget *book, GtkWidget *tab)
 	gtk_widget_set_margin_bottom (label, 1);
 	gtk_box_pack_start (GTK_BOX (vvbox), label, FALSE, FALSE, 2);
 
-	gtk_container_add (GTK_CONTAINER (vvbox), tab);
+	gtk_box_pack_start(GTK_BOX(vvbox), tab, TRUE, TRUE, 0);
 
 	sw = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new (NULL, NULL));
 	gtk_scrolled_window_set_shadow_type (sw, GTK_SHADOW_IN);
