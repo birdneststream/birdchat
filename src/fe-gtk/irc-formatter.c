@@ -304,8 +304,8 @@ irc_formatter_apply_to_buffer (GtkXTextView *xtext_view,
             end_iter = *iter;
             
             /* Use a dimmed version of the default text color for timestamps */
-            if (xtext_view->color_tags[8]) { /* Gray color from mIRC palette */
-                gtk_text_buffer_apply_tag(buffer, xtext_view->color_tags[8], &start_iter, &end_iter);
+            if (xtext_view->color_tags[14]) { /* Gray color from mIRC palette */
+                gtk_text_buffer_apply_tag(buffer, xtext_view->color_tags[14], &start_iter, &end_iter);
             }
             
             gtk_text_buffer_delete_mark(buffer, start_mark);
