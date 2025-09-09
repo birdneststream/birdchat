@@ -135,6 +135,12 @@ struct _XTextBuffer {
 	/* Settings */
 	gboolean time_stamp;
 	gboolean needs_recalc;
+	
+	/* Scroll position tracking */
+	double scroll_position;     /* Saved vertical scroll position (0.0 to 1.0) */
+	gboolean auto_scroll;       /* Whether to auto-scroll to bottom */
+	GtkTextMark *scroll_mark;   /* Mark to save exact position */
+	gboolean loading_backlog;   /* Whether backlog is being loaded */
 };
 
 /* Main widget structure */
@@ -186,6 +192,11 @@ struct _GtkXTextView {
 	/* Cursors */
 	GdkCursor *hand_cursor;
 	GdkCursor *resize_cursor;
+	
+	/* Scroll tracking */
+	gulong scroll_handler_id;   /* Handler ID for scroll detection */
+	gboolean user_scrolling;    /* Whether user is manually scrolling */
+	guint scroll_timer;         /* Timer for deferred scrolling */
 };
 
 struct _GtkXTextViewClass {
@@ -250,6 +261,7 @@ void gtk_xtext_foreach (xtext_buffer *buf, GtkXTextForeach func, void *data);
 /* Session support (forward declaration) */
 struct session;
 void gtk_xtext_set_marker_last (struct session *sess);
+void gtk_xtext_buffer_end_loading (xtext_buffer *buf);
 
 G_END_DECLS
 

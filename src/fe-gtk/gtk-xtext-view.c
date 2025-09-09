@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "../common/hexchat.h"
 #include "../common/fe.h"
@@ -46,6 +47,14 @@ static void gtk_xtext_view_init (GtkXTextView *xtext);
 static void gtk_xtext_view_finalize (GObject *object);
 static void gtk_xtext_view_create_tags (GtkXTextView *xtext);
 static void gtk_xtext_view_setup_text_view (GtkXTextView *xtext);
+static gboolean gtk_xtext_view_is_at_bottom (GtkXTextView *xtext);
+static void gtk_xtext_view_save_scroll_position (XTextBuffer *buf);
+static void gtk_xtext_view_restore_scroll_position (XTextBuffer *buf);
+static void gtk_xtext_view_on_adjustment_changed (GtkAdjustment *adj, GtkXTextView *xtext);
+static gboolean gtk_xtext_view_on_scroll_event (GtkWidget *widget, GdkEventScroll *event, GtkXTextView *xtext);
+static gboolean gtk_xtext_view_on_key_press (GtkWidget *widget, GdkEventKey *event, GtkXTextView *xtext);
+static double gtk_xtext_view_get_pages_from_bottom (GtkXTextView *xtext);
+static gboolean gtk_xtext_view_scroll_to_bottom_timeout (gpointer user_data);
 
 /* Buffer functions */
 static XTextBuffer *xtext_buffer_new_internal (GtkXTextView *xtext);
@@ -149,6 +158,22 @@ gtk_xtext_view_setup_text_view (GtkXTextView *xtext)
 
 	/* Get scroll adjustment for compatibility */
 	xtext->adj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (xtext));
+	
+	/* Connect scroll detection handler if adjustment is valid */
+	if (xtext->adj && GTK_IS_ADJUSTMENT(xtext->adj)) {
+		xtext->scroll_handler_id = g_signal_connect(xtext->adj, "value-changed",
+		                                            G_CALLBACK(gtk_xtext_view_on_adjustment_changed), xtext);
+	} else {
+		xtext->scroll_handler_id = 0;
+	}
+	xtext->user_scrolling = FALSE;
+	xtext->scroll_timer = 0;
+	
+	/* Connect scroll event handlers to detect user scrolling */
+	g_signal_connect(xtext->text_view, "scroll-event",
+	                G_CALLBACK(gtk_xtext_view_on_scroll_event), xtext);
+	g_signal_connect(xtext->text_view, "key-press-event",
+	                G_CALLBACK(gtk_xtext_view_on_key_press), xtext);
 
 	/* Show the text view */
 	gtk_widget_show (GTK_WIDGET (xtext->text_view));
@@ -223,6 +248,17 @@ gtk_xtext_view_finalize (GObject *object)
 {
 	GtkXTextView *xtext = GTK_XTEXT_VIEW (object);
 
+	/* Disconnect scroll handler */
+	if (xtext->scroll_handler_id && xtext->adj) {
+		g_signal_handler_disconnect(xtext->adj, xtext->scroll_handler_id);
+	}
+	
+	/* Clear scroll timer */
+	if (xtext->scroll_timer) {
+		g_source_remove(xtext->scroll_timer);
+		xtext->scroll_timer = 0;
+	}
+
 	/* Free buffers */
 	if (xtext->buffer) {
 		xtext_buffer_free_internal (xtext->buffer);
@@ -252,6 +288,213 @@ gtk_xtext_view_finalize (GObject *object)
 	G_OBJECT_CLASS (gtk_xtext_view_parent_class)->finalize (object);
 }
 
+/* Scroll helper functions */
+static gboolean
+gtk_xtext_view_is_at_bottom (GtkXTextView *xtext)
+{
+	return (gtk_xtext_view_get_pages_from_bottom(xtext) <= 0.1);
+}
+
+static double
+gtk_xtext_view_get_pages_from_bottom (GtkXTextView *xtext)
+{
+	GtkAdjustment *adj;
+	double value, upper, page_size, max_val;
+	
+	if (!xtext || !xtext->adj) return 0.0;
+	
+	/* Make sure adjustment is valid */
+	if (!GTK_IS_ADJUSTMENT(xtext->adj)) {
+		return 0.0;
+	}
+	
+	adj = xtext->adj;
+	value = gtk_adjustment_get_value(adj);
+	upper = gtk_adjustment_get_upper(adj);
+	page_size = gtk_adjustment_get_page_size(adj);
+	max_val = upper - page_size;
+	
+	if (page_size == 0) {
+		return 0.0;
+	}
+	
+	/* Return pages from bottom (Srain's approach) */
+	return (max_val - value) / page_size;
+}
+
+static void
+gtk_xtext_view_save_scroll_position (XTextBuffer *buf)
+{
+	GtkXTextView *xtext;
+	GtkTextIter iter;
+	GdkRectangle rect;
+	
+	if (!buf || !buf->xtext_view) return;
+	xtext = buf->xtext_view;
+	
+	/* Make sure we have valid adjustment */
+	if (!xtext->adj || !GTK_IS_ADJUSTMENT(xtext->adj)) {
+		return;
+	}
+	
+	/* Save the adjustment value */
+	double value = gtk_adjustment_get_value(xtext->adj);
+	double upper = gtk_adjustment_get_upper(xtext->adj);
+	double page_size = gtk_adjustment_get_page_size(xtext->adj);
+	
+	if (upper > page_size) {
+		buf->scroll_position = value / (upper - page_size);
+	} else {
+		buf->scroll_position = 0.0;
+	}
+	
+	/* Also save the exact position using a text mark */
+	if (xtext->text_view && buf->text_buffer && buf->scroll_mark) {
+		gtk_text_view_get_visible_rect(xtext->text_view, &rect);
+		gtk_text_view_get_iter_at_location(xtext->text_view, &iter, rect.x, rect.y);
+		gtk_text_buffer_move_mark(buf->text_buffer, buf->scroll_mark, &iter);
+	}
+	
+	/* Update auto-scroll flag based on position */
+	buf->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
+}
+
+static void
+gtk_xtext_view_restore_scroll_position (XTextBuffer *buf)
+{
+	GtkXTextView *xtext;
+	
+	if (!buf || !buf->xtext_view) return;
+	xtext = buf->xtext_view;
+	
+	/* Make sure we have valid components */
+	if (!xtext->text_view || !buf->text_buffer) {
+		return;
+	}
+	
+	if (buf->auto_scroll) {
+		/* Auto-scroll to bottom using adjustment - avoids selection issues */
+		GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(xtext));
+		if (adj && GTK_IS_ADJUSTMENT(adj)) {
+			double upper = gtk_adjustment_get_upper(adj);
+			double page_size = gtk_adjustment_get_page_size(adj);
+			gtk_adjustment_set_value(adj, upper - page_size);
+		}
+	} else if (buf->scroll_mark) {
+		/* Restore saved position */
+		gtk_text_view_scroll_to_mark(xtext->text_view, buf->scroll_mark, 0.0, TRUE, 0.0, 0.0);
+	}
+}
+
+static void
+gtk_xtext_view_on_adjustment_changed (GtkAdjustment *adj, GtkXTextView *xtext)
+{
+	if (!xtext || !xtext->buffer) return;
+	
+	/* Don't update scroll state while loading backlog */
+	if (xtext->buffer->loading_backlog) {
+		return;
+	}
+	
+	/* Check if this is user-initiated scrolling */
+	if (!xtext->user_scrolling) {
+		/* This is programmatic scrolling, don't update auto_scroll */
+		return;
+	}
+	
+	/* User is scrolling - update auto-scroll flag */
+	xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
+}
+
+static gboolean
+gtk_xtext_view_update_auto_scroll (gpointer data)
+{
+	GtkXTextView *xtext = (GtkXTextView *)data;
+	if (xtext && xtext->buffer && !xtext->buffer->loading_backlog) {
+		xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
+	}
+	return FALSE; /* Remove idle handler */
+}
+
+static gboolean
+gtk_xtext_view_scroll_to_bottom_timeout (gpointer user_data)
+{
+	GtkXTextView *xtext = (GtkXTextView *)user_data;
+	
+	if (!xtext || !xtext->text_view || !xtext->buffer || !xtext->buffer->text_buffer) {
+		return G_SOURCE_REMOVE;
+	}
+	
+	/* Scroll to bottom using adjustment - avoids selection issues */
+	GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(xtext));
+	if (adj && GTK_IS_ADJUSTMENT(adj)) {
+		double upper = gtk_adjustment_get_upper(adj);
+		double page_size = gtk_adjustment_get_page_size(adj);
+		
+		/* Temporarily disable user scrolling during programmatic scroll */
+		xtext->user_scrolling = FALSE;
+		gtk_adjustment_set_value(adj, upper - page_size);
+	}
+	
+	/* Clear timer */
+	xtext->scroll_timer = 0;
+	
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+gtk_xtext_view_on_scroll_event (GtkWidget *widget, GdkEventScroll *event, GtkXTextView *xtext)
+{
+	if (!xtext || !xtext->buffer) return FALSE;
+	
+	/* End backlog loading on first user interaction */
+	if (xtext->buffer->loading_backlog) {
+		xtext->buffer->loading_backlog = FALSE;
+	}
+	
+	/* User is manually scrolling */
+	xtext->user_scrolling = TRUE;
+	
+	/* Update auto-scroll flag based on resulting position */
+	/* We'll check this after the scroll is processed */
+	g_idle_add_full(G_PRIORITY_HIGH_IDLE,
+	               gtk_xtext_view_update_auto_scroll,
+	               xtext, NULL);
+	
+	return FALSE; /* Let GTK handle the scroll */
+}
+
+static gboolean
+gtk_xtext_view_on_key_press (GtkWidget *widget, GdkEventKey *event, GtkXTextView *xtext)
+{
+	if (!xtext || !xtext->buffer) return FALSE;
+	
+	/* Check for keys that affect scrolling */
+	switch (event->keyval) {
+		case GDK_KEY_Page_Up:
+		case GDK_KEY_Page_Down:
+		case GDK_KEY_Home:
+		case GDK_KEY_End:
+		case GDK_KEY_Up:
+		case GDK_KEY_Down:
+			/* End backlog loading on first user interaction */
+			if (xtext->buffer->loading_backlog) {
+				xtext->buffer->loading_backlog = FALSE;
+			}
+			
+			/* User is manually scrolling */
+			xtext->user_scrolling = TRUE;
+			
+			/* Update auto-scroll flag after key is processed */
+			g_idle_add_full(G_PRIORITY_HIGH_IDLE,
+			               gtk_xtext_view_update_auto_scroll,
+			               xtext, NULL);
+			break;
+	}
+	
+	return FALSE; /* Let GTK handle the key */
+}
+
 /* Buffer management */
 static XTextBuffer *
 xtext_buffer_new_internal (GtkXTextView *xtext)
@@ -272,6 +515,19 @@ xtext_buffer_new_internal (GtkXTextView *xtext)
 	buf->search_text = NULL;
 	buf->search_nee = NULL;
 	buf->search_lnee = 0;
+	
+	/* Initialize scroll tracking */
+	buf->scroll_position = 1.0;  /* Start at bottom */
+	buf->auto_scroll = TRUE;     /* Auto-scroll enabled by default */
+	buf->loading_backlog = TRUE; /* Assume loading backlog initially */
+	
+	/* Create scroll mark at start of buffer */
+	GtkTextIter start_iter;
+	gtk_text_buffer_get_start_iter(buf->text_buffer, &start_iter);
+	buf->scroll_mark = gtk_text_buffer_create_mark(buf->text_buffer, NULL, &start_iter, TRUE);
+	
+	/* Auto-end loading state after reasonable time */
+	g_timeout_add(2000, (GSourceFunc)gtk_xtext_buffer_end_loading, buf);
 
 	return buf;
 }
@@ -289,6 +545,11 @@ xtext_buffer_free_internal (XTextBuffer *buf)
 	}
 	if (buf->search_found) {
 		g_list_free (buf->search_found);
+	}
+	
+	/* Clean up scroll mark */
+	if (buf->scroll_mark && buf->text_buffer) {
+		gtk_text_buffer_delete_mark(buf->text_buffer, buf->scroll_mark);
 	}
 	
 	/* Clean up the text buffer */
@@ -348,6 +609,16 @@ gtk_xtext_append (xtext_buffer *buf, unsigned char *text, int len, time_t stamp)
 
 	buf->num_lines++;
 
+	/* Clear any existing text selection to prevent re-selection issues */
+	if (buf->xtext_view && buf->xtext_view->text_view) {
+		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
+		if (view_buffer == text_buffer) {
+			GtkTextIter cursor_iter;
+			gtk_text_buffer_get_end_iter(text_buffer, &cursor_iter);
+			gtk_text_buffer_place_cursor(text_buffer, &cursor_iter);
+		}
+	}
+	
 	/* Handle line limits - batch delete for better performance */
 	if (buf->max_lines > 0 && buf->num_lines > buf->max_lines) {
 		GtkTextIter start_iter, end_iter;
@@ -361,11 +632,20 @@ gtk_xtext_append (xtext_buffer *buf, unsigned char *text, int len, time_t stamp)
 		buf->num_lines = buf->max_lines;
 	}
 
-	/* Always force scroll to bottom */
-	GtkTextMark *end_mark = gtk_text_buffer_get_insert(text_buffer);
-	gtk_text_buffer_get_end_iter (text_buffer, &iter);
-	gtk_text_buffer_move_mark(text_buffer, end_mark, &iter);
-	gtk_text_view_scroll_mark_onscreen(buf->xtext_view->text_view, end_mark);
+	/* Smart scroll: only scroll if near bottom (Srain's approach) */
+	if (buf->xtext_view) {
+		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
+		if (view_buffer == text_buffer) {
+			/* During backlog loading, always scroll to bottom */
+			/* After loading, only scroll if within 0.15 pages from bottom */
+			gboolean should_scroll = buf->loading_backlog || 
+			                        gtk_xtext_view_get_pages_from_bottom(buf->xtext_view) <= 0.15;
+			
+			if (should_scroll && !buf->xtext_view->scroll_timer) {
+				buf->xtext_view->scroll_timer = g_timeout_add(50, gtk_xtext_view_scroll_to_bottom_timeout, buf->xtext_view);
+			}
+		}
+	}
 
 	/* Cleanup */
 	irc_formatter_free (formatted);
@@ -424,11 +704,20 @@ gtk_xtext_append_indent (xtext_buffer *buf,
 		buf->num_lines = buf->max_lines;
 	}
 
-	/* Always force scroll to bottom */
-	GtkTextMark *end_mark = gtk_text_buffer_get_insert(text_buffer);
-	gtk_text_buffer_get_end_iter (text_buffer, &iter);
-	gtk_text_buffer_move_mark(text_buffer, end_mark, &iter);
-	gtk_text_view_scroll_mark_onscreen(buf->xtext_view->text_view, end_mark);
+	/* Smart scroll: only scroll if near bottom (Srain's approach) */
+	if (buf->xtext_view) {
+		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
+		if (view_buffer == text_buffer) {
+			/* During backlog loading, always scroll to bottom */
+			/* After loading, only scroll if within 0.15 pages from bottom */
+			gboolean should_scroll = buf->loading_backlog || 
+			                        gtk_xtext_view_get_pages_from_bottom(buf->xtext_view) <= 0.15;
+			
+			if (should_scroll && !buf->xtext_view->scroll_timer) {
+				buf->xtext_view->scroll_timer = g_timeout_add(50, gtk_xtext_view_scroll_to_bottom_timeout, buf->xtext_view);
+			}
+		}
+	}
 
 	/* Cleanup */
 	if (left_formatted) irc_formatter_free (left_formatted);
@@ -548,11 +837,22 @@ gtk_xtext_buffer_free (xtext_buffer *buf)
 void
 gtk_xtext_buffer_show (GtkXText *xtext, xtext_buffer *buf, int render)
 {
+	xtext_buffer *old_buffer;
+	
 	if (!xtext || !buf) return;
+	
+	/* Save scroll position of current buffer before switching */
+	old_buffer = xtext->buffer;
+	if (old_buffer && old_buffer != buf) {
+		gtk_xtext_view_save_scroll_position(old_buffer);
+	}
 	
 	/* Switch active buffer */
 	xtext->buffer = buf;
 	buf->xtext_view = xtext;
+	
+	/* Temporarily disable scroll handler during buffer switch */
+	xtext->user_scrolling = FALSE;
 	
 	/* Switch the text view to use this buffer's text buffer */
 	gtk_text_view_set_buffer(xtext->text_view, buf->text_buffer);
@@ -560,12 +860,11 @@ gtk_xtext_buffer_show (GtkXText *xtext, xtext_buffer *buf, int render)
 	/* Update the xtext->text_buffer reference to the new buffer */
 	xtext->text_buffer = buf->text_buffer;
 	
-	/* Always scroll to bottom when switching buffers */
-	GtkTextIter iter;
-	GtkTextMark *end_mark = gtk_text_buffer_get_insert(buf->text_buffer);
-	gtk_text_buffer_get_end_iter(buf->text_buffer, &iter);
-	gtk_text_buffer_move_mark(buf->text_buffer, end_mark, &iter);
-	gtk_text_view_scroll_mark_onscreen(xtext->text_view, end_mark);
+	/* Restore scroll position for the new buffer */
+	gtk_xtext_view_restore_scroll_position(buf);
+	
+	/* Re-enable scroll handler */
+	xtext->user_scrolling = TRUE;
 	
 	if (render) {
 		gtk_xtext_refresh (xtext);
@@ -582,6 +881,20 @@ gtk_xtext_is_empty (xtext_buffer *buf)
 /* Settings API */
 void gtk_xtext_set_indent (GtkXText *xtext, gboolean indent) {
 	if (xtext) xtext->auto_indent = indent;
+}
+
+void gtk_xtext_buffer_end_loading (xtext_buffer *buf) {
+	if (buf) {
+		buf->loading_backlog = FALSE;
+		/* Force scroll to bottom after loading */
+		if (buf->xtext_view && buf->auto_scroll) {
+			if (!buf->xtext_view->scroll_timer) {
+				buf->xtext_view->scroll_timer = g_timeout_add(100, 
+				                                              gtk_xtext_view_scroll_to_bottom_timeout, 
+				                                              buf->xtext_view);
+			}
+		}
+	}
 }
 
 void gtk_xtext_set_max_indent (GtkXText *xtext, int max_auto_indent) {
