@@ -2041,8 +2041,25 @@ text_emit (int index, session *sess, char *a, char *b, char *c, char *d,
 	tab_state_flags plugin_state = sess->last_tab_state;
 	unsigned int stripcolor_args = (chanopt_is_set (prefs.hex_text_stripcolor_msg, sess->text_strip) ? 0xFFFFFFFF : 0);
 	char tbuf[NICKLEN + 4];
+	char *birdnick = NULL;
 
-	if (a != NULL && prefs.hex_text_color_nicks && (index == XP_TE_CHANACTION || index == XP_TE_CHANMSG))
+	/* Apply bird transformation to nicknames */
+	if (a != NULL && (index == XP_TE_CHANACTION || index == XP_TE_CHANMSG || 
+	                  index == XP_TE_HCHANACTION || index == XP_TE_HCHANMSG ||
+	                  index == XP_TE_PRIVMSG || index == XP_TE_PRIVACTION ||
+	                  index == XP_TE_DPRIVMSG || index == XP_TE_DPRIVACTION ||
+	                  index == XP_TE_CHANNOTICE || index == XP_TE_NOTICE ||
+	                  index == XP_TE_UJOIN || index == XP_TE_UPART || 
+	                  index == XP_TE_UPARTREASON || index == XP_TE_UKICK ||
+	                  index == XP_TE_QUIT || index == XP_TE_CHANGENICK ||
+	                  index == XP_TE_UCHANGENICK))
+	{
+		birdnick = append_bird_to_nick (a);
+		a = birdnick;
+	}
+
+	if (a != NULL && prefs.hex_text_color_nicks && (index == XP_TE_CHANACTION || index == XP_TE_CHANMSG || 
+	                                                index == XP_TE_HCHANACTION || index == XP_TE_HCHANMSG))
 	{
 		g_snprintf (tbuf, sizeof (tbuf), "\003%d%s", text_color_of (a), a);
 		a = tbuf;
@@ -2130,6 +2147,9 @@ text_emit (int index, session *sess, char *a, char *b, char *c, char *d,
 	if (!prefs.hex_away_omit_alerts || !sess->server->is_away)
 		sound_play_event (index);
 	display_event (sess, index, word, stripcolor_args, timestamp);
+	
+	/* Free the bird nickname if we allocated it */
+	g_free (birdnick);
 }
 
 char *

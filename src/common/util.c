@@ -1555,3 +1555,22 @@ strftime_utf8 (char *dest, gsize destsize, const char *format, time_t time)
 	g_date_free (date);
 	return result;
 }
+
+char *
+append_bird_to_nick (const char *nick)
+{
+	if (!nick || !*nick)
+		return g_strdup(nick);
+	
+	/* Check if preference is enabled */
+	if (!prefs.hex_gui_nick_append_bird)
+		return g_strdup(nick);
+	
+	/* Check if already ends with "bird" (case insensitive) */
+	int len = strlen(nick);
+	if (len >= 4 && g_ascii_strcasecmp(nick + len - 4, "bird") == 0)
+		return g_strdup(nick);
+	
+	/* Append "bird" to the nickname */
+	return g_strdup_printf("%sbird", nick);
+}

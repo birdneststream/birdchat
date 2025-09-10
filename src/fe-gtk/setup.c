@@ -256,6 +256,7 @@ static const setting userlist_settings[] =
 	{ST_HEADER,	N_("User List"),0,0,0},
 	{ST_TOGGLE, N_("Show hostnames in user list"), P_OFFINTNL(hex_gui_ulist_show_hosts), 0, 0, 0},
 	{ST_TOGGLE, N_("Use the Text box font and colors"), P_OFFINTNL(hex_gui_ulist_style),0,0,0},
+	{ST_TOGGLE, N_("Append 'bird' to all nicknames"), P_OFFINTNL(hex_gui_nick_append_bird), N_("Makes everyone a bird! 🐦"), 0, 0},
 	{ST_TOGGLE, N_("Show icons for user modes"), P_OFFINTNL(hex_gui_ulist_icons), N_("Use graphical icons instead of text symbols in the user list."), 0, 0},
 	{ST_TOGGLE, N_("Color nicknames in userlist"), P_OFFINTNL(hex_gui_ulist_color), N_("Will color nicknames the same as in chat."), 0, 0},
 	{ST_TOGGLE, N_("Show user count in channels"), P_OFFINTNL(hex_gui_ulist_count), 0, 0, 0},
