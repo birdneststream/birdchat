@@ -1,5 +1,5 @@
 project('hexchat', 'c',
-  version: '2.16.2',
+  version: '3.0.0',
   meson_version: '>= 0.47.0',
   default_options: [
     'c_std=gnu89',
@@ -110,6 +110,9 @@ test_cflags = [
   ['-Werror=format-security', '-Werror=format=1'],
   '-Werror=missing-include-dirs',
   '-Werror=date-time',
+  '-DGDK_DISABLE_DEPRECATED',
+  '-DGTK_DISABLE_DEPRECATED',
+  '-Wdeprecated-declarations',
 ]
 foreach cflag : test_cflags
   if cc.has_multi_arguments(cflag)

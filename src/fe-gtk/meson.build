@@ -21,14 +21,17 @@ hexchat_gtk_sources = [
   'rawlog.c',
   'servlistgui.c',
   'setup.c',
-  'sexy-spell-entry.c',
+#  'sexy-spell-entry.c',  # Disabled for GTK3 - needs full migration
+  'sexy-spell-stubs.c',  # GTK3: Temporary stubs
   'textgui.c',
   'urlgrab.c',
   'userlistgui.c',
-  'xtext.c'
+  'gtk-xtext-view.c',
+  'irc-formatter.c',
+  'url-handler.c'
 ]
 
-gtk_dep = dependency('gtk+-2.0', version: '>= 2.24.0')
+gtk_dep = dependency('gtk+-3.0', version: '>= 3.10.0')
 hexchat_gtk_deps = [
   hexchat_common_dep,
   libgmodule_dep, # used by libsexy
@@ -37,6 +40,12 @@ hexchat_gtk_deps = [
 
 if gtk_dep.get_pkgconfig_variable('target') == 'x11'
   hexchat_gtk_deps += dependency('x11')
+elif host_machine.system() == 'linux'
+  # GTK3: Ensure X11 is available on Linux systems
+  x11_dep = dependency('x11', required: false)
+  if x11_dep.found()
+    hexchat_gtk_deps += x11_dep
+  endif
 endif
 
 hexchat_gtk_cflags = []

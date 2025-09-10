@@ -20,7 +20,7 @@
 #ifndef HEXCHAT_PALETTE_H
 #define HEXCHAT_PALETTE_H
 
-extern GdkColor colors[];
+extern GdkRGBA colors[];
 
 #define THEME_MAX_MIRC_COLS 32
 #define THEME_MAX_COLOR (THEME_MAX_MIRC_COLS + 9)

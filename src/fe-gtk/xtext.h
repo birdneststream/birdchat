@@ -130,8 +130,8 @@ struct _GtkXText
 	xtext_buffer *selection_buffer;
 
 	GtkAdjustment *adj;
-	GdkPixmap *pixmap;				/* 0 = use palette[19] */
-	GdkDrawable *draw_buf;			/* points to ->window */
+	GdkPixbuf *pixmap;				/* 0 = use palette[19] */
+	GdkWindow *draw_buf;			/* points to ->window */
 	GdkCursor *hand_cursor;
 	GdkCursor *resize_cursor;
 
@@ -142,13 +142,13 @@ struct _GtkXText
 	int last_win_h;
 	int last_win_w;
 
-	GdkGC *bgc;						  /* backing pixmap */
-	GdkGC *fgc;						  /* text foreground color */
-	GdkGC *light_gc;				  /* sep bar */
-	GdkGC *dark_gc;
-	GdkGC *thin_gc;
-	GdkGC *marker_gc;
-	GdkColor palette[XTEXT_COLS];
+	cairo_t *bgc;					  /* backing context */
+	cairo_t *fgc;					  /* text foreground context */
+	cairo_t *light_gc;				  /* sep bar */
+	cairo_t *dark_gc;
+	cairo_t *thin_gc;
+	cairo_t *marker_gc;
+	GdkRGBA palette[XTEXT_COLS];
 
 	gint io_tag;					  /* for delayed refresh events */
 	gint add_io_tag;				  /* "" when adding new text */
@@ -252,15 +252,15 @@ struct _GtkXTextClass
 	void (*set_scroll_adjustments) (GtkXText *xtext, GtkAdjustment *hadj, GtkAdjustment *vadj);
 };
 
-GtkWidget *gtk_xtext_new (GdkColor palette[], int separator);
+GtkWidget *gtk_xtext_new (GdkRGBA palette[], int separator);
 void gtk_xtext_append (xtext_buffer *buf, unsigned char *text, int len, time_t stamp);
 void gtk_xtext_append_indent (xtext_buffer *buf,
 										unsigned char *left_text, int left_len,
 										unsigned char *right_text, int right_len,
 										time_t stamp);
 int gtk_xtext_set_font (GtkXText *xtext, char *name);
-void gtk_xtext_set_background (GtkXText * xtext, GdkPixmap * pixmap);
-void gtk_xtext_set_palette (GtkXText * xtext, GdkColor palette[]);
+void gtk_xtext_set_background (GtkXText * xtext, GdkPixbuf * pixmap);
+void gtk_xtext_set_palette (GtkXText * xtext, GdkRGBA palette[]);
 void gtk_xtext_clear (xtext_buffer *buf, int lines);
 void gtk_xtext_save (GtkXText * xtext, int fh);
 void gtk_xtext_refresh (GtkXText * xtext);
