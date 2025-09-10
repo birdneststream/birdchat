@@ -33,6 +33,9 @@
 
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
+#ifdef GDK_WINDOWING_WAYLAND
+#include <gdk/gdkwayland.h>
+#endif
 #endif
 
 #include "../common/hexchat.h"
@@ -759,6 +762,11 @@ gtkutil_tray_icon_supported (GtkWindow *window)
 #else
 	GdkScreen *screen = gtk_window_get_screen (window);
 	GdkDisplay *display = gdk_screen_get_display (screen);
+#ifdef GDK_WINDOWING_WAYLAND
+	if (GDK_IS_WAYLAND_DISPLAY(display)) {
+		return FALSE;
+	}
+#endif
 	int screen_number = gdk_screen_get_number (screen);
 	Display *xdisplay = gdk_x11_display_get_xdisplay (display);
 	char *selection_name = g_strdup_printf ("_NET_SYSTEM_TRAY_S%d", screen_number);

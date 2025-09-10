@@ -1424,7 +1424,7 @@ setup_color_response_cb (GtkWidget *dialog, gint response_id, gpointer user_data
 	{
 		GtkCssProvider *provider = gtk_css_provider_new();
 		GtkStyleContext *context = gtk_widget_get_style_context(button);
-		gchar *css = g_strdup_printf("* { background-color: rgb(%d, %d, %d); }",
+		gchar *css = g_strdup_printf("* { background-color: rgb(%d, %d, %d); background-image: none; }",
 		                             (int)(col->red * 255), (int)(col->green * 255), (int)(col->blue * 255));
 		gtk_css_provider_load_from_data(provider, css, -1, NULL);
 		gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider),
@@ -1467,7 +1467,7 @@ setup_create_color_button (GtkWidget *table, int num, int row, int col)
 	GtkWidget *but;
 	char buf[64];
 
-	if (num > 31)
+	if (num > 98)
 		strcpy (buf, "<span size=\"x-small\"> </span>");
 	else
 						/* 12345678901 23456789 01  23456789 */
@@ -1483,7 +1483,7 @@ setup_create_color_button (GtkWidget *table, int num, int row, int col)
 	{
 		GtkCssProvider *provider = gtk_css_provider_new();
 		GtkStyleContext *context = gtk_widget_get_style_context(but);
-		gchar *css = g_strdup_printf("* { background-color: rgb(%d, %d, %d); }",
+		gchar *css = g_strdup_printf("* { background-color: rgb(%d, %d, %d); background-image: none; }",
 		                             (int)(colors[num].red * 255), (int)(colors[num].green * 255), (int)(colors[num].blue * 255));
 		gtk_css_provider_load_from_data(provider, css, -1, NULL);
 		gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider),
@@ -1551,27 +1551,27 @@ setup_create_color_page (void)
 	gtk_widget_set_margin_start (label, LABEL_INDENT);
 	gtk_grid_attach (GTK_GRID (tab), label, 2, 2, 1, 1);
 
-	for (i = 16; i < 32; i++)
-		setup_create_color_button (tab, i, 2, (i+3) - 16);
+	for (i = 16; i < 99; i++)
+		setup_create_color_button (tab, i, 1 + (i / 16), (i+3) - (16 * (i/16)));
 
-	setup_create_other_color (_("Foreground:"), COL_FG, 3, tab);
-	setup_create_other_colorR (_("Background:"), COL_BG, 3, tab);
+	setup_create_other_color (_("Foreground:"), COL_FG, 14, tab);
+	setup_create_other_colorR (_("Background:"), COL_BG, 14, tab);
 
-	setup_create_header (tab, 5, N_("Selected Text"));
+	setup_create_header (tab, 16, N_("Selected Text"));
 
-	setup_create_other_color (_("Foreground:"), COL_MARK_FG, 6, tab);
-	setup_create_other_colorR (_("Background:"), COL_MARK_BG, 6, tab);
+	setup_create_other_color (_("Foreground:"), COL_MARK_FG, 17, tab);
+	setup_create_other_colorR (_("Background:"), COL_MARK_BG, 17, tab);
 
-	setup_create_header (tab, 8, N_("Interface Colors"));
+	setup_create_header (tab, 19, N_("Interface Colors"));
 
-	setup_create_other_color (_("New data:"), COL_NEW_DATA, 9, tab);
-	setup_create_other_colorR (_("Marker line:"), COL_MARKER, 9, tab);
-	setup_create_other_color (_("New message:"), COL_NEW_MSG, 10, tab);
-	setup_create_other_colorR (_("Away user:"), COL_AWAY, 10, tab);
-	setup_create_other_color (_("Highlight:"), COL_HILIGHT, 11, tab);
-	setup_create_other_colorR (_("Spell checker:"), COL_SPELL, 11, tab);
+	setup_create_other_color (_("New data:"), COL_NEW_DATA, 20, tab);
+	setup_create_other_colorR (_("Marker line:"), COL_MARKER, 20, tab);
+	setup_create_other_color (_("New message:"), COL_NEW_MSG, 21, tab);
+	setup_create_other_colorR (_("Away user:"), COL_AWAY, 21, tab);
+	setup_create_other_color (_("Highlight:"), COL_HILIGHT, 22, tab);
+	setup_create_other_colorR (_("Spell checker:"), COL_SPELL, 22, tab);
 
-	setup_create_header (tab, 15, N_("Color Stripping"));
+	setup_create_header (tab, 26, N_("Color Stripping"));
 
 	/* label = gtk_label_new (_("Strip colors from:"));
 	gtk_widget_set_halign (label, GTK_ALIGN_START);
@@ -1581,17 +1581,10 @@ setup_create_color_page (void)
 
 	for (i = 0; i < 3; i++)
 	{
-		setup_create_toggleL (tab, i + 16, &color_settings[i]);
+		setup_create_toggleL (tab, i + 28, &color_settings[i]);
 	}
 
-	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
-	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
-	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
-	gtk_container_add (GTK_CONTAINER (scrolled), box);
-	
-	return scrolled;
+	return box;
 }
 
 /* === GLOBALS for sound GUI === */
@@ -1783,11 +1776,12 @@ setup_create_sound_page (void)
 
 	vbox2 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_widget_show (vbox2);
-	gtk_container_add (GTK_CONTAINER (vbox1), vbox2);
+	gtk_box_pack_start (GTK_CONTAINER (vbox1), vbox2, TRUE, TRUE, 0);
 
 	scrolledwindow1 = gtk_scrolled_window_new (NULL, NULL);
 	gtk_widget_show (scrolledwindow1);
-	gtk_container_add (GTK_CONTAINER (vbox2), scrolledwindow1);
+	//gtk_container_add (GTK_CONTAINER (vbox2), scrolledwindow1);
+	gtk_box_pack_start(GTK_BOX(vbox2), scrolledwindow1, TRUE, TRUE, 0);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolledwindow1),
 											  GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolledwindow1),
@@ -1805,7 +1799,7 @@ setup_create_sound_page (void)
 
 	table1 = gtk_grid_new ();
 	gtk_widget_show (table1);
-	gtk_box_pack_start (GTK_BOX (vbox2), table1, FALSE, TRUE, 8);
+	gtk_box_pack_end (GTK_BOX (vbox2), table1, FALSE, TRUE, 8);
 	gtk_grid_set_row_spacing (GTK_GRID (table1), 2);
 	gtk_grid_set_column_spacing (GTK_GRID (table1), 4);
 
@@ -1838,14 +1832,7 @@ setup_create_sound_page (void)
 
 	setup_snd_row_cb (sel, NULL);
 
-	/* Wrap content in scrolled window to ensure proper expansion and scrolling */
-	GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled),
-	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scrolled), GTK_SHADOW_NONE);
-	gtk_container_add (GTK_CONTAINER (scrolled), vbox1);
-	
-	return scrolled;
+	return vbox1;
 }
 
 static void
@@ -1869,7 +1856,7 @@ setup_add_page (const char *title, GtkWidget *book, GtkWidget *tab)
 	gtk_widget_set_margin_bottom (label, 1);
 	gtk_box_pack_start (GTK_BOX (vvbox), label, FALSE, FALSE, 2);
 
-	gtk_container_add (GTK_CONTAINER (vvbox), tab);
+	gtk_box_pack_start(GTK_BOX(vvbox), tab, TRUE, TRUE, 0);
 
 	sw = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new (NULL, NULL));
 	gtk_scrolled_window_set_shadow_type (sw, GTK_SHADOW_IN);
