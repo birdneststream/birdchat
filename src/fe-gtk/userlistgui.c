@@ -345,15 +345,18 @@ fe_userlist_insert (session *sess, struct User *newuser, gboolean sel)
 	else if (prefs.hex_gui_ulist_color)
 		nick_color = text_color_of(newuser->nick);
 
-	nick = newuser->nick;
+	/* Apply bird nickname transformation */
+	char *birdnick = append_bird_to_nick (newuser->nick);
+	
+	nick = birdnick;
 	if (!prefs.hex_gui_ulist_icons)
 	{
-		nick = g_malloc (strlen (newuser->nick) + 2);
+		nick = g_malloc (strlen (birdnick) + 2);
 		nick[0] = newuser->prefix[0];
 		if (nick[0] == '\0' || nick[0] == ' ')
-			strcpy (nick, newuser->nick);
+			strcpy (nick, birdnick);
 		else
-			strcpy (nick + 1, newuser->nick);
+			strcpy (nick + 1, birdnick);
 		pix = NULL;
 	}
 
@@ -369,6 +372,7 @@ fe_userlist_insert (session *sess, struct User *newuser, gboolean sel)
 	{
 		g_free (nick);
 	}
+	g_free (birdnick);
 
 	/* is it me? */
 	if (newuser->me && sess->gui->nick_box)

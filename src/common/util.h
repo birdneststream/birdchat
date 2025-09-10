@@ -75,6 +75,7 @@ guint32 str_hash (const char *key);
 guint32 str_ihash (const unsigned char *key);
 void safe_strcpy (char *dest, const char *src, int bytes_left);
 void canonalize_key (char *key);
+char *append_bird_to_nick (const char *nick);
 int portable_mode (void);
 char *encode_sasl_pass_plain (char *user, char *pass);
 char *challengeauth_response (const char *username, const char *password, const char *challenge);
