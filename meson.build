@@ -1,5 +1,5 @@
 project('hexchat', 'c',
-  version: '2.16.2',
+  version: '3.0.0',
   meson_version: '>= 0.47.0',
   default_options: [
     'c_std=gnu89',
