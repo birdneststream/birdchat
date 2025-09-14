@@ -4,13 +4,16 @@ This is a fork from the now archived hexchat [https://github.com/hexchat/hexchat
 
 This fork has the following changes:
 
-- It contains [99 Color Support](https://github.com/hexchat/hexchat/pull/2456) thanks to `chzchzchz` which the original hexchat author did not want to merge in for some reason.
+- It contains [99 Color Support](https://github.com/hexchat/hexchat/pull/2456) thanks to `chzchzchz` which the original hexchat author did not want to merge in for some reason. Now we can enjoy proper IRC ASCII art in full.
 - Migrated from `gtk2` to `gtk3` while it works mostly there are still a few things to unvibe code and manually fix up. Man, Claude was puttin' in that work, movin' GTK2 to GTK3, for four hours straight.
 - A `birdbuild` directory which contains some bash scripts that build:
   - Linux build
   - Windows build, with all plugins compiling.
-  - FreeBSD build, not really working. Need to add the deps and stuff.
-  - DragonFlyBSD build which was working but I don't know at the moment.
+  - There are FreeBSD and DragonFlyBSD builds but they are just not working at all because of trying to cross compile them. Sorta don't want to try to fix these again as it was rather painful. Maybe I'll remove them.
+
+This `birdchat` still has a lot of problems mostly because it was vibe coded and I gotta learn C to fix them up. Use at your own risk.
+
+Thanks to `hgc55` for fixing a lot of the terrible gtk3 migration code and giving me some hints to make it easier to work out wtf is wrong with this thing.
 
 Here is the original `readme.md` contents.
 

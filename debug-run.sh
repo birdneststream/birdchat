@@ -13,11 +13,17 @@ export G_SLICE=always-malloc
 export MALLOC_CHECK_=2
 export MALLOC_PERTURB_=1
 
+# GTK Debug options for visual debugging
+export GTK_DEBUG=text,interactive
+
 echo "✅ Memory debugging environment set up"
 echo "   - G_DEBUG=gc-friendly (better GLib debugging)"
 echo "   - G_SLICE=always-malloc (use system malloc)"
 echo "   - MALLOC_CHECK_=2 (abort on memory errors)"
 echo "   - MALLOC_PERTURB_=1 (initialize freed memory)"
+echo "✅ GTK debugging enabled"
+echo "   - GTK_DEBUG=text,interactive (text widget internals + inspector)"
+echo "   - Press Ctrl+Shift+I to open GTK Inspector"
 
 # Check if we can run with valgrind
 if command -v valgrind >/dev/null 2>&1; then
