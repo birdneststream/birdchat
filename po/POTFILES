@@ -4,7 +4,7 @@ data/misc/io.github.Hexchat.ThemeManager.desktop.in
 src/common/cfgfiles.c
 src/common/chanopt.c
 src/common/dcc.c
-src/common/hexchat.c
+src/common/birdchat.c
 src/common/ignore.c
 src/common/inbound.c
 src/common/notify.c

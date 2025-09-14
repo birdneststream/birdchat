@@ -31,7 +31,7 @@ endif
 config_h = configuration_data()
 config_h.set_quoted('PACKAGE_VERSION', meson.project_version())
 config_h.set_quoted('PACKAGE_NAME', meson.project_name())
-config_h.set_quoted('GETTEXT_PACKAGE', 'hexchat')
+config_h.set_quoted('GETTEXT_PACKAGE', 'birdchat')
 config_h.set_quoted('LOCALEDIR', join_paths(get_option('prefix'),
                                  get_option('datadir'), 'locale'))
 config_h.set_quoted('G_LOG_DOMAIN', 'hexchat')

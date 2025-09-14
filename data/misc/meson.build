@@ -22,9 +22,9 @@ if get_option('gtk-frontend')
 
   desktop_conf = configuration_data()
   if dbus_glib_dep.found()
-    desktop_conf.set('exec_command', 'hexchat --existing %U')
+    desktop_conf.set('exec_command', 'birdchat --existing %U')
   else
-    desktop_conf.set('exec_command', 'hexchat %U')
+    desktop_conf.set('exec_command', 'birdchat %U')
   endif
 
   desktop_file = configure_file(

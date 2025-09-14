@@ -2257,9 +2257,9 @@ sound_play (const char *file, gboolean quiet)
 		{
 			ca_context_create (&ca_con);
 			ca_context_change_props (ca_con,
-											CA_PROP_APPLICATION_ID, "hexchat",
-											CA_PROP_APPLICATION_NAME, "HexChat",
-											CA_PROP_APPLICATION_ICON_NAME, "hexchat", NULL);
+											CA_PROP_APPLICATION_ID, "birdchat",
+											CA_PROP_APPLICATION_NAME, "BirdChat",
+											CA_PROP_APPLICATION_ICON_NAME, "birdchat", NULL);
 		}
 
 		if (ca_context_play (ca_con, 0, CA_PROP_MEDIA_FILENAME, wavfile, NULL) != 0)

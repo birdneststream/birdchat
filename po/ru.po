@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the hexchat package.
+# This file is distributed under the same license as the birdchat package.
 # 
 # Translators:
 # Aleksandr P, 2010
@@ -20,12 +20,12 @@
 # Магретов Никита <huku111a@gmail.com>, 2016
 msgid ""
 msgstr ""
-"Project-Id-Version: HexChat\n"
+"Project-Id-Version: BirdChat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-04-03 16:10-0400\n"
 "PO-Revision-Date: 2019-03-18 18:38+0000\n"
 "Last-Translator: Артем Малофеев <79067635919@yandex.ru>\n"
-"Language-Team: Russian (http://www.transifex.com/hexchat/hexchat/language/ru/)\n"
+"Language-Team: Russian (http://www.transifex.com/birdchat/birdchat/language/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -35,8 +35,8 @@ msgstr ""
 #: data/misc/io.github.Hexchat.appdata.xml.in:4
 #: data/misc/io.github.Hexchat.appdata.xml.in:5
 #: data/misc/io.github.Hexchat.desktop.in.in:3
-msgid "HexChat"
-msgstr "HexChat"
+msgid "BirdChat"
+msgstr "BirdChat"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:9
 #: data/misc/io.github.Hexchat.desktop.in.in:4
@@ -45,16 +45,16 @@ msgstr "IRC Клиент"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:11
 msgid ""
-"HexChat is an easy to use yet extensible IRC Client. It allows you to "
+"BirdChat is an easy to use yet extensible IRC Client. It allows you to "
 "securely join multiple networks and talk to users privately or in channels "
 "using a customizable interface. You can even transfer files."
-msgstr "HexChat - это лёгкий в использовании, но расширяемый IRC Клиент. Он позволяет безопасно соединяться со множеством сетей и общаться с пользователями лично или на каналах, используя настраиваемый интерфейс. Вы даже можете передавать файлы."
+msgstr "BirdChat - это лёгкий в использовании, но расширяемый IRC Клиент. Он позволяет безопасно соединяться со множеством сетей и общаться с пользователями лично или на каналах, используя настраиваемый интерфейс. Вы даже можете передавать файлы."
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:12
 msgid ""
-"HexChat supports features such as: DCC, SASL, proxies, spellcheck, alerts, "
+"BirdChat supports features such as: DCC, SASL, proxies, spellcheck, alerts, "
 "logging, custom themes, and Python/Perl scripts."
-msgstr "HexChat поддерживает следующие функции: DCC, SASL, прокси, проверка орфографии, уведомления, ведение логов, настраиваемые темы и скрипты на Python/Perl."
+msgstr "BirdChat поддерживает следующие функции: DCC, SASL, прокси, проверка орфографии, уведомления, ведение логов, настраиваемые темы и скрипты на Python/Perl."
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:22
 msgid "Main Chat Window"
@@ -70,7 +70,7 @@ msgstr "IM;Чат;"
 
 #: data/misc/io.github.Hexchat.desktop.in.in:8
 #: data/misc/io.github.Hexchat.ThemeManager.desktop.in:5
-msgid "hexchat"
+msgid "birdchat"
 msgstr ""
 
 #: data/misc/io.github.Hexchat.desktop.in.in:19
@@ -78,8 +78,8 @@ msgid "Open Safe Mode"
 msgstr "Открыть безопасный режим"
 
 #: data/misc/io.github.Hexchat.ThemeManager.desktop.in:3
-msgid "HexChat Theme Manager"
-msgstr "Управление темами HexChat"
+msgid "BirdChat Theme Manager"
+msgstr "Управление темами BirdChat"
 
 #. 0 means unlimited
 #. STRINGS
@@ -172,142 +172,142 @@ msgstr "%s предлагает \"%s\". Будете принимать?"
 msgid "No active DCCs\n"
 msgstr "Нет активных DCC\n"
 
-#: src/common/hexchat.c:885
+#: src/common/birdchat.c:885
 msgid "_Open Dialog Window"
 msgstr "Начать ра_зговор"
 
-#: src/common/hexchat.c:886
+#: src/common/birdchat.c:886
 msgid "_Send a File"
 msgstr "Отправить _файл"
 
-#: src/common/hexchat.c:887
+#: src/common/birdchat.c:887
 msgid "_User Info (WhoIs)"
 msgstr "_Информация (WHOIS)"
 
-#: src/common/hexchat.c:888
+#: src/common/birdchat.c:888
 msgid "_Add to Friends List"
 msgstr "Добавить в дру_зья"
 
-#: src/common/hexchat.c:889
+#: src/common/birdchat.c:889
 msgid "_Ignore"
 msgstr "_Игнорировать"
 
-#: src/common/hexchat.c:890
+#: src/common/birdchat.c:890
 msgid "O_perator Actions"
 msgstr "Действия опе_ратора"
 
-#: src/common/hexchat.c:892
+#: src/common/birdchat.c:892
 msgid "Give Ops"
 msgstr "Дать оператора"
 
-#: src/common/hexchat.c:893
+#: src/common/birdchat.c:893
 msgid "Take Ops"
 msgstr "Снять оператора"
 
-#: src/common/hexchat.c:894
+#: src/common/birdchat.c:894
 msgid "Give Voice"
 msgstr "Дать голос"
 
-#: src/common/hexchat.c:895
+#: src/common/birdchat.c:895
 msgid "Take Voice"
 msgstr "Забрать голос"
 
-#: src/common/hexchat.c:897
+#: src/common/birdchat.c:897
 msgid "Kick/Ban"
 msgstr "Кик/Бан"
 
-#: src/common/hexchat.c:898 src/common/hexchat.c:935
+#: src/common/birdchat.c:898 src/common/birdchat.c:935
 msgid "Kick"
 msgstr "Кик"
 
-#: src/common/hexchat.c:899 src/common/hexchat.c:900 src/common/hexchat.c:901
-#: src/common/hexchat.c:902 src/common/hexchat.c:903 src/common/hexchat.c:934
+#: src/common/birdchat.c:899 src/common/birdchat.c:900 src/common/birdchat.c:901
+#: src/common/birdchat.c:902 src/common/birdchat.c:903 src/common/birdchat.c:934
 #: src/fe-gtk/banlist.c:50
 msgid "Ban"
 msgstr "Бан"
 
-#: src/common/hexchat.c:904 src/common/hexchat.c:905 src/common/hexchat.c:906
-#: src/common/hexchat.c:907
+#: src/common/birdchat.c:904 src/common/birdchat.c:905 src/common/birdchat.c:906
+#: src/common/birdchat.c:907
 msgid "KickBan"
 msgstr "Кик+Бан"
 
-#: src/common/hexchat.c:917
+#: src/common/birdchat.c:917
 msgid "Leave Channel"
 msgstr "Уйти с канала"
 
-#: src/common/hexchat.c:918
+#: src/common/birdchat.c:918
 msgid "Join Channel..."
 msgstr "Зайти на канал..."
 
-#: src/common/hexchat.c:919 src/fe-gtk/menu.c:1411
+#: src/common/birdchat.c:919 src/fe-gtk/menu.c:1411
 msgid "Enter Channel to Join:"
 msgstr "Введите канал для входа:"
 
-#: src/common/hexchat.c:920
+#: src/common/birdchat.c:920
 msgid "Server Links"
 msgstr "Ссылки сервера"
 
-#: src/common/hexchat.c:921
+#: src/common/birdchat.c:921
 msgid "Ping Server"
 msgstr "Ping Server"
 
-#: src/common/hexchat.c:922
+#: src/common/birdchat.c:922
 msgid "Hide Version"
 msgstr "Не показывать версию"
 
-#: src/common/hexchat.c:932
+#: src/common/birdchat.c:932
 msgid "Op"
 msgstr "Оператор"
 
-#: src/common/hexchat.c:933
+#: src/common/birdchat.c:933
 msgid "DeOp"
 msgstr "Снять оператора"
 
-#: src/common/hexchat.c:936
+#: src/common/birdchat.c:936
 msgid "bye"
 msgstr "пока"
 
-#: src/common/hexchat.c:937
+#: src/common/birdchat.c:937
 #, c-format
 msgid "Enter reason to kick %s:"
 msgstr "Введите причину кика %s:"
 
-#: src/common/hexchat.c:938
+#: src/common/birdchat.c:938
 msgid "Send File"
 msgstr ""
 
-#: src/common/hexchat.c:939
+#: src/common/birdchat.c:939
 msgid "Dialog"
 msgstr "Диалог"
 
-#: src/common/hexchat.c:948
+#: src/common/birdchat.c:948
 msgid "WhoIs"
 msgstr "Кто "
 
-#: src/common/hexchat.c:949
+#: src/common/birdchat.c:949
 msgid "Send"
 msgstr "Послать"
 
-#: src/common/hexchat.c:950
+#: src/common/birdchat.c:950
 msgid "Chat"
 msgstr "Разговор"
 
-#: src/common/hexchat.c:951 src/fe-gtk/banlist.c:847 src/fe-gtk/dccgui.c:889
+#: src/common/birdchat.c:951 src/fe-gtk/banlist.c:847 src/fe-gtk/dccgui.c:889
 #: src/fe-gtk/ignoregui.c:387 src/fe-gtk/urlgrab.c:214
 msgid "Clear"
 msgstr "Очистить"
 
-#: src/common/hexchat.c:952
+#: src/common/birdchat.c:952
 msgid "Ping"
 msgstr "Ping"
 
-#: src/common/hexchat.c:1125
+#: src/common/birdchat.c:1125
 #, c-format
 msgid ""
 "You do not have write access to %s. Nothing from this session can be saved."
 msgstr "У вас нет права записи в %s. Ничего нельзя сохранить в текущей сессии."
 
-#: src/common/hexchat.c:1134
+#: src/common/birdchat.c:1134
 msgid ""
 "* Running IRC as root is stupid! You should\n"
 "  create a User Account and use that to login.\n"
@@ -579,8 +579,8 @@ msgid "EXECWRITE, sends data to the processes stdin"
 msgstr "EXECWRITE, посылает процессу данные на stdin"
 
 #: src/common/outbound.c:3993
-msgid "EXPORTCONF, exports HexChat settings"
-msgstr "EXPORTCONF, экспортирует настройки HexChat"
+msgid "EXPORTCONF, exports BirdChat settings"
+msgstr "EXPORTCONF, экспортирует настройки BirdChat"
 
 #: src/common/outbound.c:3996
 msgid "FLUSHQ, flushes the current server's send queue"
@@ -758,9 +758,9 @@ msgstr "RECONNECT [-ssl] [<Сервер>] [<Порт>] [<Пароль>]. Мож�
 
 #: src/common/outbound.c:4085
 msgid ""
-"RECV <text>, send raw data to HexChat, as if it was received from the IRC "
+"RECV <text>, send raw data to BirdChat, as if it was received from the IRC "
 "server"
-msgstr "RECV <текст>, отправляет сырые (raw) данные в HexChat, как будто бы они были получены с IRC севера"
+msgstr "RECV <текст>, отправляет сырые (raw) данные в BirdChat, как будто бы они были получены с IRC севера"
 
 #: src/common/outbound.c:4086
 msgid "RELOAD <name>, reloads a plugin or script"
@@ -901,8 +901,8 @@ msgid "Unknown Command %s. Try /help\n"
 msgstr "Неизвестная команда %s. Попробуйте /help\n"
 
 #: src/common/plugin.c:403
-msgid "No hexchat_plugin_init symbol; is this really a HexChat plugin?"
-msgstr "Нет символа hexchat_plugin_init; это точно плагин для HexChat?"
+msgid "No birdchat_plugin_init symbol; is this really a BirdChat plugin?"
+msgstr "Нет символа birdchat_plugin_init; это точно плагин для BirdChat?"
 
 #: src/common/plugin-identd.c:175
 #, c-format
@@ -3481,8 +3481,8 @@ msgid "Execute command:"
 msgstr "Выполнить команду:"
 
 #: src/fe-gtk/fe-gtk.c:89
-msgid "Open URL or execute command in an existing HexChat"
-msgstr "Открыть URL или выполнить команду в текущем HexChat"
+msgid "Open URL or execute command in an existing BirdChat"
+msgstr "Открыть URL или выполнить команду в текущем BirdChat"
 
 #: src/fe-gtk/fe-gtk.c:91
 msgid "Begin minimized. Level 0=Normal 1=Iconified 2=Tray"
@@ -3763,8 +3763,8 @@ msgid ""
 msgstr "Для этого сервера открыто %d каналов или разговоров. Закрыть их все?"
 
 #: src/fe-gtk/maingui.c:1177
-msgid "Quit HexChat?"
-msgstr "Выйти из HexChat?"
+msgid "Quit BirdChat?"
+msgstr "Выйти из BirdChat?"
 
 #: src/fe-gtk/maingui.c:1197
 msgid "Don't ask next time."
@@ -4076,7 +4076,7 @@ msgid ""
 "%m  =  machine info\n"
 "%n  =  your nick\n"
 "%t  =  time/date\n"
-"%v  =  HexChat version\n"
+"%v  =  BirdChat version\n"
 "%2  =  word 2\n"
 "%3  =  word 3\n"
 "&2  =  word 2 to the end of line\n"
@@ -4144,7 +4144,7 @@ msgid ""
 "\n"
 "Putting a ! in front of the command\n"
 "indicates it should be sent to a\n"
-"shell instead of HexChat"
+"shell instead of BirdChat"
 msgstr ""
 
 #: src/fe-gtk/menu.c:1529
