@@ -165,12 +165,19 @@ if get_option('plugin')
   subdir('plugins')
 endif
 if cc.get_id() != 'msvc'
-  subdir('data')
-  subdir('po') # FIXME: build xgettext
-
-  meson.add_install_script('meson_post_install.py',
-    '@0@'.format(get_option('theme-manager'))
-  )
+  # Detect DragonFly BSD cross-compilation and disable problematic features
+  is_dragonfly_cross = meson.is_cross_build() and host_machine.system() == 'dragonfly'
+  
+  if not is_dragonfly_cross
+    subdir('data')
+    subdir('po') # FIXME: build xgettext
+    
+    meson.add_install_script('meson_post_install.py',
+      '@0@'.format(get_option('theme-manager'))
+    )
+  else
+    message('Skipping data, po, and post-install for DragonFly BSD cross-compilation')
+  endif
 endif
 
 if meson.version().version_compare('>= 0.53.0')

@@ -41,24 +41,29 @@ enum {
 
 static guint xtext_signals[LAST_SIGNAL];
 
-/* Private functions */
+/* Private function declarations */
 static void gtk_xtext_view_class_init (GtkXTextViewClass *klass);
 static void gtk_xtext_view_init (GtkXTextView *xtext);
 static void gtk_xtext_view_finalize (GObject *object);
 static void gtk_xtext_view_create_tags (GtkXTextView *xtext);
 static void gtk_xtext_view_setup_text_view (GtkXTextView *xtext);
+
+/* Scroll helpers */
 static gboolean gtk_xtext_view_is_at_bottom (GtkXTextView *xtext);
-static void gtk_xtext_view_save_scroll_position (XTextBuffer *buf);
-static void gtk_xtext_view_restore_scroll_position (XTextBuffer *buf);
-static void gtk_xtext_view_on_adjustment_changed (GtkAdjustment *adj, GtkXTextView *xtext);
+static void gtk_xtext_view_queue_scroll_to_bottom (GtkXTextView *xtext);
+static gboolean gtk_xtext_view_scroll_to_bottom_timeout (gpointer user_data);
+static void gtk_xtext_view_handle_user_scroll (GtkXTextView *xtext);
 static gboolean gtk_xtext_view_on_scroll_event (GtkWidget *widget, GdkEventScroll *event, GtkXTextView *xtext);
 static gboolean gtk_xtext_view_on_key_press (GtkWidget *widget, GdkEventKey *event, GtkXTextView *xtext);
-static double gtk_xtext_view_get_pages_from_bottom (GtkXTextView *xtext);
-static gboolean gtk_xtext_view_scroll_to_bottom_timeout (gpointer user_data);
 
-/* Buffer functions */
+/* Buffer helpers */
 static XTextBuffer *xtext_buffer_new_internal (GtkXTextView *xtext);
 static void xtext_buffer_free_internal (XTextBuffer *buf);
+static void xtext_buffer_append_internal (XTextBuffer *buf,
+                                         unsigned char *left_text, int left_len,
+                                         unsigned char *right_text, int right_len,
+                                         time_t stamp);
+static void xtext_buffer_trim_lines (XTextBuffer *buf);
 
 G_DEFINE_TYPE (GtkXTextView, gtk_xtext_view, GTK_TYPE_SCROLLED_WINDOW)
 
@@ -106,25 +111,26 @@ gtk_xtext_view_init (GtkXTextView *xtext)
 	xtext->max_auto_indent = 256;
 	xtext->urlcheck_function = NULL;
 
-	/* Create cursors - use display aware version for GTK3 */
+	/* Start with scroll at bottom */
+	xtext->scroll_timer = 0;
+
+	/* Create cursors */
 	GdkDisplay *display = gdk_display_get_default ();
 	xtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND2);
 	xtext->resize_cursor = gdk_cursor_new_for_display (display, GDK_SB_H_DOUBLE_ARROW);
 
-	/* Initialize palette to defaults (will be set by gtk_xtext_set_palette) */
+	/* Initialize palette */
 	memset (xtext->palette, 0, sizeof (xtext->palette));
 
-	/* Setup the scrolled window */
+	/* Setup scrolled window */
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (xtext),
 	                                GTK_POLICY_NEVER,
 	                                GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (xtext),
 	                                     GTK_SHADOW_IN);
 
-	/* Create text view and buffer */
+	/* Setup text view and tags */
 	gtk_xtext_view_setup_text_view (xtext);
-	
-	/* Create text formatting tags */
 	gtk_xtext_view_create_tags (xtext);
 
 	/* Setup URL handling */
@@ -134,6 +140,9 @@ gtk_xtext_view_init (GtkXTextView *xtext)
 	xtext->buffer = xtext_buffer_new_internal (xtext);
 	xtext->orig_buffer = xtext->buffer;
 	xtext->selection_buffer = NULL;
+
+	/* Queue initial scroll to bottom */
+	g_idle_add((GSourceFunc)gtk_xtext_view_scroll_to_bottom_timeout, xtext);
 }
 
 static void
@@ -142,8 +151,8 @@ gtk_xtext_view_setup_text_view (GtkXTextView *xtext)
 	/* Create text view and buffer */
 	xtext->text_view = GTK_TEXT_VIEW (gtk_text_view_new ());
 	xtext->text_buffer = gtk_text_view_get_buffer (xtext->text_view);
-	
-	/* Store the tag table for creating additional buffers */
+
+	/* Store tag table for additional buffers */
 	xtext->tag_table = gtk_text_buffer_get_tag_table (xtext->text_buffer);
 
 	/* Configure text view */
@@ -156,20 +165,14 @@ gtk_xtext_view_setup_text_view (GtkXTextView *xtext)
 	/* Add to scrolled window */
 	gtk_container_add (GTK_CONTAINER (xtext), GTK_WIDGET (xtext->text_view));
 
-	/* Get scroll adjustment for compatibility */
+	/* Get scroll adjustment */
 	xtext->adj = gtk_scrolled_window_get_vadjustment (GTK_SCROLLED_WINDOW (xtext));
-	
-	/* Connect scroll detection handler if adjustment is valid */
-	if (xtext->adj && GTK_IS_ADJUSTMENT(xtext->adj)) {
-		xtext->scroll_handler_id = g_signal_connect(xtext->adj, "value-changed",
-		                                            G_CALLBACK(gtk_xtext_view_on_adjustment_changed), xtext);
-	} else {
-		xtext->scroll_handler_id = 0;
-	}
-	xtext->user_scrolling = FALSE;
+
+	/* Connect scroll event handlers */
+	xtext->scroll_handler_id = 0;
 	xtext->scroll_timer = 0;
-	
-	/* Connect scroll event handlers to detect user scrolling */
+
+	/* Connect user interaction handlers - these need proper event handler signatures */
 	g_signal_connect(xtext->text_view, "scroll-event",
 	                G_CALLBACK(gtk_xtext_view_on_scroll_event), xtext);
 	g_signal_connect(xtext->text_view, "key-press-event",
@@ -177,23 +180,6 @@ gtk_xtext_view_setup_text_view (GtkXTextView *xtext)
 
 	/* Show the text view */
 	gtk_widget_show (GTK_WIDGET (xtext->text_view));
-}
-
-/* Constructor - Create a new XText widget */
-GtkWidget *
-gtk_xtext_view_new (xtext_buffer *buffer)
-{
-	GtkXTextView *xtext = g_object_new (GTK_TYPE_XTEXT, NULL);
-	
-	/* If a buffer was provided, use it instead of the default */
-	if (buffer) {
-		xtext->buffer = buffer;
-		xtext->orig_buffer = buffer;
-		buffer->xtext_view = xtext;
-		buffer->xtext = (GtkXText *)xtext; /* For compatibility */
-	}
-	
-	return GTK_WIDGET (xtext);
 }
 
 static void
@@ -204,40 +190,27 @@ gtk_xtext_view_create_tags (GtkXTextView *xtext)
 
 	/* Create formatting tags */
 	xtext->bold_tag = gtk_text_buffer_create_tag (buffer, "bold",
-	                                              "weight", PANGO_WEIGHT_BOLD,
-	                                              NULL);
-
+	                                              "weight", PANGO_WEIGHT_BOLD, NULL);
 	xtext->italic_tag = gtk_text_buffer_create_tag (buffer, "italic",
-	                                                "style", PANGO_STYLE_ITALIC,
-	                                                NULL);
-
+	                                                "style", PANGO_STYLE_ITALIC, NULL);
 	xtext->underline_tag = gtk_text_buffer_create_tag (buffer, "underline",
-	                                                   "underline", PANGO_UNDERLINE_SINGLE,
-	                                                   NULL);
-
+	                                                   "underline", PANGO_UNDERLINE_SINGLE, NULL);
 	xtext->strikethrough_tag = gtk_text_buffer_create_tag (buffer, "strikethrough",
-	                                                       "strikethrough", TRUE,
-	                                                       NULL);
-
+	                                                       "strikethrough", TRUE, NULL);
 	xtext->url_tag = gtk_text_buffer_create_tag (buffer, "url",
 	                                             "underline", PANGO_UNDERLINE_SINGLE,
-	                                             "foreground", "blue",
-	                                             NULL);
-
+	                                             "foreground", "blue", NULL);
 	xtext->search_highlight_tag = gtk_text_buffer_create_tag (buffer, "search_highlight",
 	                                                          "background", "yellow",
-	                                                          "foreground", "black",
-	                                                          NULL);
+	                                                          "foreground", "black", NULL);
 
-	/* Create color tags - will be populated by gtk_xtext_set_palette */
+	/* Create color tags */
 	for (i = 0; i < XTEXT_COLS; i++) {
 		char tag_name[32];
-		
-		/* Foreground color tags */
+
 		snprintf (tag_name, sizeof (tag_name), "fg_color_%d", i);
 		xtext->color_tags[i] = gtk_text_buffer_create_tag (buffer, tag_name, NULL);
-		
-		/* Background color tags */
+
 		snprintf (tag_name, sizeof (tag_name), "bg_color_%d", i);
 		xtext->bg_color_tags[i] = gtk_text_buffer_create_tag (buffer, tag_name, NULL);
 	}
@@ -248,15 +221,12 @@ gtk_xtext_view_finalize (GObject *object)
 {
 	GtkXTextView *xtext = GTK_XTEXT_VIEW (object);
 
-	/* Disconnect scroll handler */
+	/* Cleanup scroll handling */
 	if (xtext->scroll_handler_id && xtext->adj) {
 		g_signal_handler_disconnect(xtext->adj, xtext->scroll_handler_id);
 	}
-	
-	/* Clear scroll timer */
 	if (xtext->scroll_timer) {
 		g_source_remove(xtext->scroll_timer);
-		xtext->scroll_timer = 0;
 	}
 
 	/* Free buffers */
@@ -267,17 +237,13 @@ gtk_xtext_view_finalize (GObject *object)
 		xtext_buffer_free_internal (xtext->selection_buffer);
 	}
 
-	/* Free font */
+	/* Free resources */
 	if (xtext->font) {
 		pango_font_description_free (xtext->font);
 	}
-
-	/* Free pixmap */
 	if (xtext->background_pixmap) {
 		g_object_unref (xtext->background_pixmap);
 	}
-
-	/* Free cursors */
 	if (xtext->hand_cursor) {
 		g_object_unref (xtext->hand_cursor);
 	}
@@ -288,187 +254,79 @@ gtk_xtext_view_finalize (GObject *object)
 	G_OBJECT_CLASS (gtk_xtext_view_parent_class)->finalize (object);
 }
 
-/* Scroll helper functions */
+/* Check if scrolled to bottom */
 static gboolean
 gtk_xtext_view_is_at_bottom (GtkXTextView *xtext)
 {
-	return (gtk_xtext_view_get_pages_from_bottom(xtext) <= 0.1);
-}
-
-static double
-gtk_xtext_view_get_pages_from_bottom (GtkXTextView *xtext)
-{
-	GtkAdjustment *adj;
 	double value, upper, page_size, max_val;
-	
-	if (!xtext || !xtext->adj) return 0.0;
-	
-	/* Make sure adjustment is valid */
-	if (!GTK_IS_ADJUSTMENT(xtext->adj)) {
-		return 0.0;
-	}
-	
-	adj = xtext->adj;
-	value = gtk_adjustment_get_value(adj);
-	upper = gtk_adjustment_get_upper(adj);
-	page_size = gtk_adjustment_get_page_size(adj);
+
+	if (!xtext || !xtext->adj || !GTK_IS_ADJUSTMENT(xtext->adj))
+		return TRUE; /* Default to auto-scroll */
+
+	value = gtk_adjustment_get_value(xtext->adj);
+	upper = gtk_adjustment_get_upper(xtext->adj);
+	page_size = gtk_adjustment_get_page_size(xtext->adj);
 	max_val = upper - page_size;
-	
-	if (page_size == 0) {
-		return 0.0;
-	}
-	
-	/* Return pages from bottom (Srain's approach) */
-	return (max_val - value) / page_size;
+
+	if (page_size == 0 || upper <= page_size)
+		return TRUE; /* If content fits in view, always auto-scroll */
+
+	/* Check if at bottom (within 15 pixels tolerance for smoother UX) */
+	return (max_val - value) < 15.0;
 }
 
 static void
-gtk_xtext_view_save_scroll_position (XTextBuffer *buf)
+gtk_xtext_view_queue_scroll_to_bottom (GtkXTextView *xtext)
 {
-	GtkXTextView *xtext;
-	GtkTextIter iter;
-	GdkRectangle rect;
-	
-	if (!buf || !buf->xtext_view) return;
-	xtext = buf->xtext_view;
-	
-	/* Make sure we have valid adjustment */
-	if (!xtext->adj || !GTK_IS_ADJUSTMENT(xtext->adj)) {
+	if (!xtext || xtext->scroll_timer)
 		return;
-	}
-	
-	/* Save the adjustment value */
-	double value = gtk_adjustment_get_value(xtext->adj);
-	double upper = gtk_adjustment_get_upper(xtext->adj);
-	double page_size = gtk_adjustment_get_page_size(xtext->adj);
-	
-	if (upper > page_size) {
-		buf->scroll_position = value / (upper - page_size);
-	} else {
-		buf->scroll_position = 0.0;
-	}
-	
-	/* Also save the exact position using a text mark */
-	if (xtext->text_view && buf->text_buffer && buf->scroll_mark) {
-		gtk_text_view_get_visible_rect(xtext->text_view, &rect);
-		gtk_text_view_get_iter_at_location(xtext->text_view, &iter, rect.x, rect.y);
-		gtk_text_buffer_move_mark(buf->text_buffer, buf->scroll_mark, &iter);
-	}
-	
-	/* Update auto-scroll flag based on position */
-	buf->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
-}
 
-static void
-gtk_xtext_view_restore_scroll_position (XTextBuffer *buf)
-{
-	GtkXTextView *xtext;
-	
-	if (!buf || !buf->xtext_view) return;
-	xtext = buf->xtext_view;
-	
-	/* Make sure we have valid components */
-	if (!xtext->text_view || !buf->text_buffer) {
-		return;
-	}
-	
-	if (buf->auto_scroll) {
-		/* Auto-scroll to bottom using adjustment - avoids selection issues */
-		GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(xtext));
-		if (adj && GTK_IS_ADJUSTMENT(adj)) {
-			double upper = gtk_adjustment_get_upper(adj);
-			double page_size = gtk_adjustment_get_page_size(adj);
-			gtk_adjustment_set_value(adj, upper - page_size);
-		}
-	} else if (buf->scroll_mark) {
-		/* Restore saved position */
-		gtk_text_view_scroll_to_mark(xtext->text_view, buf->scroll_mark, 0.0, TRUE, 0.0, 0.0);
-	}
-}
-
-static void
-gtk_xtext_view_on_adjustment_changed (GtkAdjustment *adj, GtkXTextView *xtext)
-{
-	if (!xtext || !xtext->buffer) return;
-	
-	/* Don't update scroll state while loading backlog */
-	if (xtext->buffer->loading_backlog) {
-		return;
-	}
-	
-	/* Check if this is user-initiated scrolling */
-	if (!xtext->user_scrolling) {
-		/* This is programmatic scrolling, don't update auto_scroll */
-		return;
-	}
-	
-	/* User is scrolling - update auto-scroll flag */
-	xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
-}
-
-static gboolean
-gtk_xtext_view_update_auto_scroll (gpointer data)
-{
-	GtkXTextView *xtext = (GtkXTextView *)data;
-	if (xtext && xtext->buffer && !xtext->buffer->loading_backlog) {
-		xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
-	}
-	return FALSE; /* Remove idle handler */
+	xtext->scroll_timer = g_timeout_add(50, gtk_xtext_view_scroll_to_bottom_timeout, xtext);
 }
 
 static gboolean
 gtk_xtext_view_scroll_to_bottom_timeout (gpointer user_data)
 {
 	GtkXTextView *xtext = (GtkXTextView *)user_data;
-	
+	GtkAdjustment *adj;
+	double upper, page_size;
+
 	if (!xtext || !xtext->text_view || !xtext->buffer || !xtext->buffer->text_buffer) {
+		xtext->scroll_timer = 0;
 		return G_SOURCE_REMOVE;
 	}
-	
-	/* Scroll to bottom using adjustment - avoids selection issues */
-	GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(xtext));
+
+	adj = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(xtext));
 	if (adj && GTK_IS_ADJUSTMENT(adj)) {
-		double upper = gtk_adjustment_get_upper(adj);
-		double page_size = gtk_adjustment_get_page_size(adj);
-		
-		/* Temporarily disable user scrolling during programmatic scroll */
-		xtext->user_scrolling = FALSE;
+		upper = gtk_adjustment_get_upper(adj);
+		page_size = gtk_adjustment_get_page_size(adj);
 		gtk_adjustment_set_value(adj, upper - page_size);
 	}
-	
-	/* Clear timer */
+
 	xtext->scroll_timer = 0;
-	
 	return G_SOURCE_REMOVE;
+}
+
+static void
+gtk_xtext_view_handle_user_scroll (GtkXTextView *xtext)
+{
+	if (!xtext || !xtext->buffer)
+		return;
+
+	/* Update auto-scroll flag based on current position */
+	xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
 }
 
 static gboolean
 gtk_xtext_view_on_scroll_event (GtkWidget *widget, GdkEventScroll *event, GtkXTextView *xtext)
 {
-	if (!xtext || !xtext->buffer) return FALSE;
-	
-	/* End backlog loading on first user interaction */
-	if (xtext->buffer->loading_backlog) {
-		xtext->buffer->loading_backlog = FALSE;
-	}
-	
-	/* User is manually scrolling */
-	xtext->user_scrolling = TRUE;
-	
-	/* Update auto-scroll flag based on resulting position */
-	/* We'll check this after the scroll is processed */
-	g_idle_add_full(G_PRIORITY_HIGH_IDLE,
-	               gtk_xtext_view_update_auto_scroll,
-	               xtext, NULL);
-	
+	gtk_xtext_view_handle_user_scroll(xtext);
 	return FALSE; /* Let GTK handle the scroll */
 }
 
 static gboolean
 gtk_xtext_view_on_key_press (GtkWidget *widget, GdkEventKey *event, GtkXTextView *xtext)
 {
-	if (!xtext || !xtext->buffer) return FALSE;
-	
 	/* Check for keys that affect scrolling */
 	switch (event->keyval) {
 		case GDK_KEY_Page_Up:
@@ -477,21 +335,9 @@ gtk_xtext_view_on_key_press (GtkWidget *widget, GdkEventKey *event, GtkXTextView
 		case GDK_KEY_End:
 		case GDK_KEY_Up:
 		case GDK_KEY_Down:
-			/* End backlog loading on first user interaction */
-			if (xtext->buffer->loading_backlog) {
-				xtext->buffer->loading_backlog = FALSE;
-			}
-			
-			/* User is manually scrolling */
-			xtext->user_scrolling = TRUE;
-			
-			/* Update auto-scroll flag after key is processed */
-			g_idle_add_full(G_PRIORITY_HIGH_IDLE,
-			               gtk_xtext_view_update_auto_scroll,
-			               xtext, NULL);
+			gtk_xtext_view_handle_user_scroll(xtext);
 			break;
 	}
-	
 	return FALSE; /* Let GTK handle the key */
 }
 
@@ -500,11 +346,10 @@ static XTextBuffer *
 xtext_buffer_new_internal (GtkXTextView *xtext)
 {
 	XTextBuffer *buf = g_malloc0 (sizeof (XTextBuffer));
-	
+
 	buf->xtext_view = xtext;
-	/* Each buffer gets its own text buffer */
 	buf->text_buffer = gtk_text_buffer_new(xtext->tag_table);
-	buf->xtext = (GtkXText *)xtext;  /* Compatibility pointer */
+	buf->xtext = (GtkXText *)xtext;  /* Compatibility */
 	buf->max_lines = 1000;
 	buf->num_lines = 0;
 	buf->indent = 0;
@@ -515,19 +360,7 @@ xtext_buffer_new_internal (GtkXTextView *xtext)
 	buf->search_text = NULL;
 	buf->search_nee = NULL;
 	buf->search_lnee = 0;
-	
-	/* Initialize scroll tracking */
-	buf->scroll_position = 1.0;  /* Start at bottom */
-	buf->auto_scroll = TRUE;     /* Auto-scroll enabled by default */
-	buf->loading_backlog = TRUE; /* Assume loading backlog initially */
-	
-	/* Create scroll mark at start of buffer */
-	GtkTextIter start_iter;
-	gtk_text_buffer_get_start_iter(buf->text_buffer, &start_iter);
-	buf->scroll_mark = gtk_text_buffer_create_mark(buf->text_buffer, NULL, &start_iter, TRUE);
-	
-	/* Auto-end loading state after reasonable time */
-	g_timeout_add(2000, (GSourceFunc)gtk_xtext_buffer_end_loading, buf);
+	buf->auto_scroll = TRUE;  /* Always auto-scroll by default */
 
 	return buf;
 }
@@ -546,20 +379,94 @@ xtext_buffer_free_internal (XTextBuffer *buf)
 	if (buf->search_found) {
 		g_list_free (buf->search_found);
 	}
-	
-	/* Clean up scroll mark */
-	if (buf->scroll_mark && buf->text_buffer) {
-		gtk_text_buffer_delete_mark(buf->text_buffer, buf->scroll_mark);
-	}
-	
-	/* Clean up the text buffer */
+
+	/* Clean up buffer */
 	if (buf->text_buffer) {
 		g_object_unref(buf->text_buffer);
 	}
-	
-	buf->text_buffer = NULL;
 
 	g_free (buf);
+}
+
+/* Unified text append function */
+static void
+xtext_buffer_append_internal (XTextBuffer *buf,
+                             unsigned char *left_text, int left_len,
+                             unsigned char *right_text, int right_len,
+                             time_t stamp)
+{
+	GtkTextBuffer *text_buffer;
+	GtkTextIter iter;
+	IrcFormattedText *left_formatted = NULL, *right_formatted = NULL;
+
+	if (!buf) return;
+	if (!left_text && !right_text) return;
+
+	text_buffer = buf->text_buffer;
+	gtk_text_buffer_get_end_iter (text_buffer, &iter);
+
+	/* Parse and apply left text */
+	if (left_text && left_len > 0) {
+		left_formatted = irc_formatter_parse (left_text, left_len, stamp);
+		if (left_formatted) {
+			irc_formatter_apply_to_buffer (buf->xtext_view, text_buffer, &iter, left_formatted);
+			if (right_text && right_len > 0) {
+				gtk_text_buffer_insert (text_buffer, &iter, " ", 1);
+			}
+			irc_formatter_free (left_formatted);
+		}
+	}
+
+	/* Parse and apply right text */
+	if (right_text && right_len > 0) {
+		right_formatted = irc_formatter_parse (right_text, right_len, stamp ? 0 : stamp);
+		if (right_formatted) {
+			irc_formatter_apply_to_buffer (buf->xtext_view, text_buffer, &iter, right_formatted);
+			irc_formatter_free (right_formatted);
+		}
+	}
+
+	/* Add newline */
+	gtk_text_buffer_insert (text_buffer, &iter, "\n", 1);
+	buf->num_lines++;
+
+	/* Clear selection to prevent issues */
+	if (buf->xtext_view && buf->xtext_view->text_view) {
+		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
+		if (view_buffer == text_buffer) {
+			gtk_text_buffer_get_end_iter(text_buffer, &iter);
+			gtk_text_buffer_place_cursor(text_buffer, &iter);
+		}
+	}
+
+	/* Trim excess lines */
+	xtext_buffer_trim_lines(buf);
+
+	/* Always scroll to bottom when adding content */
+	if (buf->xtext_view) {
+		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
+		if (view_buffer == text_buffer) {
+			/* During initial load or if auto_scroll is enabled, scroll to bottom */
+			if (buf->auto_scroll || buf->num_lines <= 50) {
+				gtk_xtext_view_queue_scroll_to_bottom(buf->xtext_view);
+			}
+		}
+	}
+}
+
+static void
+xtext_buffer_trim_lines (XTextBuffer *buf)
+{
+	if (buf->max_lines > 0 && buf->num_lines > buf->max_lines) {
+		GtkTextIter start_iter, end_iter;
+		int lines_to_delete = buf->num_lines - buf->max_lines;
+
+		gtk_text_buffer_get_start_iter (buf->text_buffer, &start_iter);
+		gtk_text_buffer_get_iter_at_line (buf->text_buffer, &end_iter, lines_to_delete);
+		gtk_text_buffer_delete (buf->text_buffer, &start_iter, &end_iter);
+
+		buf->num_lines = buf->max_lines;
+	}
 }
 
 /* Public API implementation */
@@ -577,8 +484,22 @@ gtk_xtext_new (GdkRGBA palette[], int separator)
 	if (palette) {
 		gtk_xtext_set_palette (GTK_XTEXT (xtext), palette);
 	}
+	xtext->separator = separator;
 
-	gtk_xtext_set_show_separator (GTK_XTEXT (xtext), separator);
+	return GTK_WIDGET (xtext);
+}
+
+GtkWidget *
+gtk_xtext_view_new (xtext_buffer *buffer)
+{
+	GtkXTextView *xtext = g_object_new (GTK_TYPE_XTEXT, NULL);
+
+	if (buffer) {
+		xtext->buffer = buffer;
+		xtext->orig_buffer = buffer;
+		buffer->xtext_view = xtext;
+		buffer->xtext = (GtkXText *)xtext;
+	}
 
 	return GTK_WIDGET (xtext);
 }
@@ -586,69 +507,8 @@ gtk_xtext_new (GdkRGBA palette[], int separator)
 void
 gtk_xtext_append (xtext_buffer *buf, unsigned char *text, int len, time_t stamp)
 {
-	GtkTextBuffer *text_buffer;
-	GtkTextIter iter;
-	IrcFormattedText *formatted;
-	
 	if (!buf || !text || len <= 0) return;
-
-	text_buffer = buf->text_buffer;
-
-	/* Parse IRC formatting */
-	formatted = irc_formatter_parse (text, len, stamp);
-	if (!formatted) return;
-
-	/* Get end iterator */
-	gtk_text_buffer_get_end_iter (text_buffer, &iter);
-	
-	/* Apply formatted text to buffer */
-	irc_formatter_apply_to_buffer (buf->xtext_view, text_buffer, &iter, formatted);
-	
-	/* Add newline */
-	gtk_text_buffer_insert (text_buffer, &iter, "\n", 1);
-
-	buf->num_lines++;
-
-	/* Clear any existing text selection to prevent re-selection issues */
-	if (buf->xtext_view && buf->xtext_view->text_view) {
-		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
-		if (view_buffer == text_buffer) {
-			GtkTextIter cursor_iter;
-			gtk_text_buffer_get_end_iter(text_buffer, &cursor_iter);
-			gtk_text_buffer_place_cursor(text_buffer, &cursor_iter);
-		}
-	}
-	
-	/* Handle line limits - batch delete for better performance */
-	if (buf->max_lines > 0 && buf->num_lines > buf->max_lines) {
-		GtkTextIter start_iter, end_iter;
-		int lines_to_delete = buf->num_lines - buf->max_lines;
-		
-		/* Delete multiple lines at once for better performance */
-		gtk_text_buffer_get_start_iter (text_buffer, &start_iter);
-		gtk_text_buffer_get_iter_at_line (text_buffer, &end_iter, lines_to_delete);
-		gtk_text_buffer_delete (text_buffer, &start_iter, &end_iter);
-		
-		buf->num_lines = buf->max_lines;
-	}
-
-	/* Smart scroll: only scroll if near bottom (Srain's approach) */
-	if (buf->xtext_view) {
-		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
-		if (view_buffer == text_buffer) {
-			/* During backlog loading, always scroll to bottom */
-			/* After loading, only scroll if within 0.15 pages from bottom */
-			gboolean should_scroll = buf->loading_backlog || 
-			                        gtk_xtext_view_get_pages_from_bottom(buf->xtext_view) <= 0.15;
-			
-			if (should_scroll && !buf->xtext_view->scroll_timer) {
-				buf->xtext_view->scroll_timer = g_timeout_add(50, gtk_xtext_view_scroll_to_bottom_timeout, buf->xtext_view);
-			}
-		}
-	}
-
-	/* Cleanup */
-	irc_formatter_free (formatted);
+	xtext_buffer_append_internal (buf, NULL, 0, text, len, stamp);
 }
 
 void
@@ -657,71 +517,7 @@ gtk_xtext_append_indent (xtext_buffer *buf,
                          unsigned char *right_text, int right_len,
                          time_t stamp)
 {
-	GtkTextBuffer *text_buffer;
-	GtkTextIter iter;
-	IrcFormattedText *left_formatted = NULL, *right_formatted = NULL;
-	
-	if (!buf) return;
-	if (!left_text && !right_text) return;
-
-	text_buffer = buf->text_buffer;
-	gtk_text_buffer_get_end_iter (text_buffer, &iter);
-
-	/* Handle left text (nick/timestamp part) */
-	if (left_text && left_len > 0) {
-		left_formatted = irc_formatter_parse (left_text, left_len, stamp);
-		if (left_formatted) {
-			irc_formatter_apply_to_buffer (buf->xtext_view, text_buffer, &iter, left_formatted);
-			
-			/* Add separator */
-			if (right_text && right_len > 0) {
-				gtk_text_buffer_insert (text_buffer, &iter, " ", 1);
-			}
-		}
-	}
-
-	/* Handle right text (message part) with proper indentation */
-	if (right_text && right_len > 0) {
-		right_formatted = irc_formatter_parse (right_text, right_len, 0);
-		if (right_formatted) {
-			irc_formatter_apply_to_buffer (buf->xtext_view, text_buffer, &iter, right_formatted);
-		}
-	}
-
-	/* Add newline */
-	gtk_text_buffer_insert (text_buffer, &iter, "\n", 1);
-	buf->num_lines++;
-
-	/* Handle line limits */
-	if (buf->max_lines > 0 && buf->num_lines > buf->max_lines) {
-		GtkTextIter start_iter, end_iter;
-		int lines_to_delete = buf->num_lines - buf->max_lines;
-		
-		gtk_text_buffer_get_start_iter (text_buffer, &start_iter);
-		gtk_text_buffer_get_iter_at_line (text_buffer, &end_iter, lines_to_delete);
-		gtk_text_buffer_delete (text_buffer, &start_iter, &end_iter);
-		
-		buf->num_lines = buf->max_lines;
-	}
-
-	/* Smart scroll: only scroll if near bottom (Srain's approach) */
-	if (buf->xtext_view) {
-		GtkTextBuffer *view_buffer = gtk_text_view_get_buffer(buf->xtext_view->text_view);
-		if (view_buffer == text_buffer) {
-			/* During backlog loading, always scroll to bottom */
-			/* After loading, only scroll if within 0.15 pages from bottom */
-			gboolean should_scroll = buf->loading_backlog || 
-			                        gtk_xtext_view_get_pages_from_bottom(buf->xtext_view) <= 0.15;
-			
-			if (should_scroll && !buf->xtext_view->scroll_timer) {
-				buf->xtext_view->scroll_timer = g_timeout_add(50, gtk_xtext_view_scroll_to_bottom_timeout, buf->xtext_view);
-			}
-		}
-	}
-
-	/* Cleanup */
-	if (left_formatted) irc_formatter_free (left_formatted);
-	if (right_formatted) irc_formatter_free (right_formatted);
+	xtext_buffer_append_internal (buf, left_text, left_len, right_text, right_len, stamp);
 }
 
 void
@@ -730,19 +526,17 @@ gtk_xtext_clear (xtext_buffer *buf, int lines)
 	if (!buf) return;
 
 	if (lines == 0) {
-		/* Clear all */
 		gtk_text_buffer_set_text (buf->text_buffer, "", 0);
 		buf->num_lines = 0;
 	} else {
-		/* Clear specific number of lines from end */
 		GtkTextIter start_iter, end_iter;
 		int total_lines = gtk_text_buffer_get_line_count (buf->text_buffer);
 		int start_line = MAX (0, total_lines - lines);
-		
+
 		gtk_text_buffer_get_iter_at_line (buf->text_buffer, &start_iter, start_line);
 		gtk_text_buffer_get_end_iter (buf->text_buffer, &end_iter);
 		gtk_text_buffer_delete (buf->text_buffer, &start_iter, &end_iter);
-		
+
 		buf->num_lines = start_line;
 	}
 }
@@ -750,7 +544,6 @@ gtk_xtext_clear (xtext_buffer *buf, int lines)
 void
 gtk_xtext_refresh (GtkXText *xtext)
 {
-	/* GtkTextView handles refreshing automatically */
 	if (xtext && xtext->text_view) {
 		gtk_widget_queue_draw (GTK_WIDGET (xtext->text_view));
 	}
@@ -760,20 +553,17 @@ int
 gtk_xtext_set_font (GtkXText *xtext, char *name)
 {
 	PangoFontDescription *font_desc;
-	
+
 	if (!xtext || !name) return 0;
 
 	font_desc = pango_font_description_from_string (name);
 	if (!font_desc) return 0;
 
-	/* Free old font */
 	if (xtext->font) {
 		pango_font_description_free (xtext->font);
 	}
-	
 	xtext->font = font_desc;
 
-	/* Apply to text view */
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	gtk_widget_override_font (GTK_WIDGET (xtext->text_view), font_desc);
@@ -787,36 +577,24 @@ gtk_xtext_set_background (GtkXText *xtext, GdkPixbuf *pixmap)
 {
 	if (!xtext) return;
 
-	/* Store reference to pixmap */
 	if (xtext->background_pixmap) {
 		g_object_unref (xtext->background_pixmap);
 	}
-	
-	if (pixmap) {
-		xtext->background_pixmap = g_object_ref (pixmap);
-	} else {
-		xtext->background_pixmap = NULL;
-	}
+	xtext->background_pixmap = pixmap ? g_object_ref (pixmap) : NULL;
 }
 
 void
 gtk_xtext_set_palette (GtkXText *xtext, GdkRGBA palette[])
 {
 	int i;
-	
+
 	if (!xtext || !palette) return;
 
-	/* Store palette */
 	memcpy (xtext->palette, palette, sizeof (GdkRGBA) * XTEXT_COLS);
 
-	/* Update color tags */
 	for (i = 0; i < XTEXT_COLS; i++) {
-		g_object_set (xtext->color_tags[i], 
-		              "foreground-rgba", &palette[i],
-		              NULL);
-		g_object_set (xtext->bg_color_tags[i],
-		              "background-rgba", &palette[i], 
-		              NULL);
+		g_object_set (xtext->color_tags[i], "foreground-rgba", &palette[i], NULL);
+		g_object_set (xtext->bg_color_tags[i], "background-rgba", &palette[i], NULL);
 	}
 }
 
@@ -837,35 +615,27 @@ gtk_xtext_buffer_free (xtext_buffer *buf)
 void
 gtk_xtext_buffer_show (GtkXText *xtext, xtext_buffer *buf, int render)
 {
-	xtext_buffer *old_buffer;
-	
+	GtkTextIter end;
+	GtkTextMark *mark;
+
 	if (!xtext || !buf) return;
-	
-	/* Save scroll position of current buffer before switching */
-	old_buffer = xtext->buffer;
-	if (old_buffer && old_buffer != buf) {
-		gtk_xtext_view_save_scroll_position(old_buffer);
-	}
-	
-	/* Switch active buffer */
+
+	/* Switch buffer */
 	xtext->buffer = buf;
 	buf->xtext_view = xtext;
-	
-	/* Temporarily disable scroll handler during buffer switch */
-	xtext->user_scrolling = FALSE;
-	
-	/* Switch the text view to use this buffer's text buffer */
+
 	gtk_text_view_set_buffer(xtext->text_view, buf->text_buffer);
-	
-	/* Update the xtext->text_buffer reference to the new buffer */
 	xtext->text_buffer = buf->text_buffer;
-	
-	/* Restore scroll position for the new buffer */
-	gtk_xtext_view_restore_scroll_position(buf);
-	
-	/* Re-enable scroll handler */
-	xtext->user_scrolling = TRUE;
-	
+
+	/* Immediately scroll to bottom when switching buffers */
+	gtk_text_buffer_get_end_iter(buf->text_buffer, &end);
+	mark = gtk_text_buffer_create_mark(buf->text_buffer, NULL, &end, FALSE);
+	gtk_text_view_scroll_mark_onscreen(xtext->text_view, mark);
+	gtk_text_buffer_delete_mark(buf->text_buffer, mark);
+
+	/* Also queue a scroll to ensure we're fully at bottom */
+	gtk_xtext_view_queue_scroll_to_bottom(xtext);
+
 	if (render) {
 		gtk_xtext_refresh (xtext);
 	}
@@ -874,27 +644,16 @@ gtk_xtext_buffer_show (GtkXText *xtext, xtext_buffer *buf, int render)
 gboolean
 gtk_xtext_is_empty (xtext_buffer *buf)
 {
-	if (!buf) return TRUE;
-	return (buf->num_lines == 0);
+	return (!buf || buf->num_lines == 0);
 }
 
-/* Settings API */
+/* Settings API - simplified inline setters */
 void gtk_xtext_set_indent (GtkXText *xtext, gboolean indent) {
 	if (xtext) xtext->auto_indent = indent;
 }
 
 void gtk_xtext_buffer_end_loading (xtext_buffer *buf) {
-	if (buf) {
-		buf->loading_backlog = FALSE;
-		/* Force scroll to bottom after loading */
-		if (buf->xtext_view && buf->auto_scroll) {
-			if (!buf->xtext_view->scroll_timer) {
-				buf->xtext_view->scroll_timer = g_timeout_add(100, 
-				                                              gtk_xtext_view_scroll_to_bottom_timeout, 
-				                                              buf->xtext_view);
-			}
-		}
-	}
+	/* No longer needed - kept for API compatibility */
 }
 
 void gtk_xtext_set_max_indent (GtkXText *xtext, int max_auto_indent) {
@@ -917,7 +676,7 @@ void gtk_xtext_set_show_separator (GtkXText *xtext, gboolean show_separator) {
 }
 
 void gtk_xtext_set_thin_separator (GtkXText *xtext, gboolean thin_separator) {
-	/* Placeholder */
+	/* Stub for compatibility */
 }
 
 void gtk_xtext_set_time_stamp (xtext_buffer *buf, gboolean timestamp) {
@@ -931,42 +690,37 @@ void gtk_xtext_set_urlcheck_function (GtkXText *xtext, int (*urlcheck_function) 
 void gtk_xtext_set_wordwrap (GtkXText *xtext, gboolean word_wrap) {
 	if (xtext) {
 		xtext->wordwrap = word_wrap;
-		gtk_text_view_set_wrap_mode (xtext->text_view, 
+		gtk_text_view_set_wrap_mode (xtext->text_view,
 		                             word_wrap ? GTK_WRAP_WORD_CHAR : GTK_WRAP_NONE);
 	}
 }
 
 void gtk_xtext_set_error_function (GtkXText *xtext, void (*error_function) (int)) {
-	/* Placeholder */
+	/* Stub for compatibility */
 }
 
-/* Search functionality - stub */
+/* Search functionality */
 textentry *gtk_xtext_search (GtkXText *xtext, const gchar *text, gtk_xtext_search_flags flags, GError **err) {
 	if (err) *err = g_error_new_literal(0, 0, "Search not implemented");
 	return NULL;
 }
 
-void gtk_xtext_reset_marker_pos (GtkXText *xtext) {
-	/* Stub */
-}
+/* Marker functions - stubs for compatibility */
+void gtk_xtext_reset_marker_pos (GtkXText *xtext) {}
+int gtk_xtext_moveto_marker_pos (GtkXText *xtext) { return 0; }
+void gtk_xtext_check_marker_visibility (GtkXText *xtext) {}
+void gtk_xtext_set_marker_last (struct session *sess) {}
 
-int gtk_xtext_moveto_marker_pos (GtkXText *xtext) {
-	return 0;
-}
-
-void gtk_xtext_check_marker_visibility (GtkXText *xtext) {
-	/* Stub */
-}
-
+/* File operations */
 void gtk_xtext_save (GtkXText *xtext, int fh) {
 	GtkTextIter start, end;
 	gchar *text;
-	
+
 	if (!xtext || !xtext->buffer) return;
-	
+
 	gtk_text_buffer_get_bounds(xtext->buffer->text_buffer, &start, &end);
 	text = gtk_text_buffer_get_text(xtext->buffer->text_buffer, &start, &end, FALSE);
-	
+
 	if (text) {
 		write(fh, text, strlen(text));
 		g_free(text);
@@ -975,7 +729,7 @@ void gtk_xtext_save (GtkXText *xtext, int fh) {
 
 void gtk_xtext_copy_selection (GtkXText *xtext) {
 	if (!xtext) return;
-	
+
 	GtkClipboard *clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
 	gtk_text_buffer_copy_clipboard(xtext->buffer->text_buffer, clipboard);
 }
@@ -987,18 +741,14 @@ int gtk_xtext_lastlog (xtext_buffer *out, xtext_buffer *search_area) {
 void gtk_xtext_foreach (xtext_buffer *buf, GtkXTextForeach func, void *data) {
 	GtkTextIter start, end;
 	gchar *text;
-	
+
 	if (!buf || !func) return;
-	
+
 	gtk_text_buffer_get_bounds(buf->text_buffer, &start, &end);
 	text = gtk_text_buffer_get_text(buf->text_buffer, &start, &end, FALSE);
-	
+
 	if (text) {
 		func((GtkXText*)buf->xtext_view, (unsigned char*)text, data);
 		g_free(text);
 	}
-}
-
-void gtk_xtext_set_marker_last (struct session *sess) {
-	/* Stub */
 }

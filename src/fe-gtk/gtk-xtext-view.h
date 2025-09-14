@@ -136,11 +136,8 @@ struct _XTextBuffer {
 	gboolean time_stamp;
 	gboolean needs_recalc;
 	
-	/* Scroll position tracking */
-	double scroll_position;     /* Saved vertical scroll position (0.0 to 1.0) */
+	/* Scroll tracking */
 	gboolean auto_scroll;       /* Whether to auto-scroll to bottom */
-	GtkTextMark *scroll_mark;   /* Mark to save exact position */
-	gboolean loading_backlog;   /* Whether backlog is being loaded */
 };
 
 /* Main widget structure */
@@ -195,7 +192,6 @@ struct _GtkXTextView {
 	
 	/* Scroll tracking */
 	gulong scroll_handler_id;   /* Handler ID for scroll detection */
-	gboolean user_scrolling;    /* Whether user is manually scrolling */
 	guint scroll_timer;         /* Timer for deferred scrolling */
 };
 
