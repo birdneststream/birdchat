@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the hexchat package.
+# This file is distributed under the same license as the birdchat package.
 # 
 # Translators:
 # Seong-ho Cho <darkcircle.0426@gmail.com>, 2014
@@ -9,12 +9,12 @@
 # Seong-ho Cho <darkcircle.0426@gmail.com>, 2014,2016-2017,2019
 msgid ""
 msgstr ""
-"Project-Id-Version: HexChat\n"
+"Project-Id-Version: BirdChat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-04-03 16:10-0400\n"
 "PO-Revision-Date: 2019-04-02 01:54+0000\n"
 "Last-Translator: Seong-ho Cho <darkcircle.0426@gmail.com>\n"
-"Language-Team: Korean (http://www.transifex.com/hexchat/hexchat/language/ko/)\n"
+"Language-Team: Korean (http://www.transifex.com/birdchat/birdchat/language/ko/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -24,7 +24,7 @@ msgstr ""
 #: data/misc/io.github.Hexchat.appdata.xml.in:4
 #: data/misc/io.github.Hexchat.appdata.xml.in:5
 #: data/misc/io.github.Hexchat.desktop.in.in:3
-msgid "HexChat"
+msgid "BirdChat"
 msgstr "헥스채트"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:9
@@ -34,14 +34,14 @@ msgstr "IRC 클라이언트"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:11
 msgid ""
-"HexChat is an easy to use yet extensible IRC Client. It allows you to "
+"BirdChat is an easy to use yet extensible IRC Client. It allows you to "
 "securely join multiple networks and talk to users privately or in channels "
 "using a customizable interface. You can even transfer files."
 msgstr "헥스채트는 사용하기 쉽고 확장성이 뛰어난 IRC 클라이언트 입니다. 여러 네트워크에 안전하게 참여할 수 있으며, 여러분이 직접 유연하게 꾸밀 수 있는 인터페이스를 사용하여 다른 사람과 개인적으로 대화하거나 대화방에서 대화할 수 있습니다. 게다가 파일도 보낼 수 있습니다."
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:12
 msgid ""
-"HexChat supports features such as: DCC, SASL, proxies, spellcheck, alerts, "
+"BirdChat supports features such as: DCC, SASL, proxies, spellcheck, alerts, "
 "logging, custom themes, and Python/Perl scripts."
 msgstr "핵스채트는 DCC, SASL, 프록시 서버, 철자 검사, 경고, 기록, 사용자 정의 테마, 파이썬/펄 스크립트 같은 기능을 지원합니다."
 
@@ -59,15 +59,15 @@ msgstr "IM;인스턴트 메신저;Chat;대화;"
 
 #: data/misc/io.github.Hexchat.desktop.in.in:8
 #: data/misc/io.github.Hexchat.ThemeManager.desktop.in:5
-msgid "hexchat"
-msgstr "hexchat"
+msgid "birdchat"
+msgstr "birdchat"
 
 #: data/misc/io.github.Hexchat.desktop.in.in:19
 msgid "Open Safe Mode"
 msgstr "공개 안전 모드"
 
 #: data/misc/io.github.Hexchat.ThemeManager.desktop.in:3
-msgid "HexChat Theme Manager"
+msgid "BirdChat Theme Manager"
 msgstr "핵스채트 테마 관리자"
 
 #. 0 means unlimited
@@ -161,142 +161,142 @@ msgstr "%s님이 \"%s\"(을)를 전송합니다. 수락하시겠습니까?"
 msgid "No active DCCs\n"
 msgstr "DCC가 활성화되지 않았습니다\n"
 
-#: src/common/hexchat.c:885
+#: src/common/birdchat.c:885
 msgid "_Open Dialog Window"
 msgstr "귓속말 창 열기(_O)"
 
-#: src/common/hexchat.c:886
+#: src/common/birdchat.c:886
 msgid "_Send a File"
 msgstr "파일 전송(_S)"
 
-#: src/common/hexchat.c:887
+#: src/common/birdchat.c:887
 msgid "_User Info (WhoIs)"
 msgstr "사용자 정보(WhoIs)(_U)"
 
-#: src/common/hexchat.c:888
+#: src/common/birdchat.c:888
 msgid "_Add to Friends List"
 msgstr "친구 목록에 추가(_A)"
 
-#: src/common/hexchat.c:889
+#: src/common/birdchat.c:889
 msgid "_Ignore"
 msgstr "무시(_I)"
 
-#: src/common/hexchat.c:890
+#: src/common/birdchat.c:890
 msgid "O_perator Actions"
 msgstr "관리자 명령(_P)"
 
-#: src/common/hexchat.c:892
+#: src/common/birdchat.c:892
 msgid "Give Ops"
 msgstr "관리 권한 주기"
 
-#: src/common/hexchat.c:893
+#: src/common/birdchat.c:893
 msgid "Take Ops"
 msgstr "관리 권한 박탈"
 
-#: src/common/hexchat.c:894
+#: src/common/birdchat.c:894
 msgid "Give Voice"
 msgstr "발언권 주기"
 
-#: src/common/hexchat.c:895
+#: src/common/birdchat.c:895
 msgid "Take Voice"
 msgstr "발언권 뺏기"
 
-#: src/common/hexchat.c:897
+#: src/common/birdchat.c:897
 msgid "Kick/Ban"
 msgstr "퇴장/입장 금지"
 
-#: src/common/hexchat.c:898 src/common/hexchat.c:935
+#: src/common/birdchat.c:898 src/common/birdchat.c:935
 msgid "Kick"
 msgstr "퇴장"
 
-#: src/common/hexchat.c:899 src/common/hexchat.c:900 src/common/hexchat.c:901
-#: src/common/hexchat.c:902 src/common/hexchat.c:903 src/common/hexchat.c:934
+#: src/common/birdchat.c:899 src/common/birdchat.c:900 src/common/birdchat.c:901
+#: src/common/birdchat.c:902 src/common/birdchat.c:903 src/common/birdchat.c:934
 #: src/fe-gtk/banlist.c:50
 msgid "Ban"
 msgstr "입장 금지"
 
-#: src/common/hexchat.c:904 src/common/hexchat.c:905 src/common/hexchat.c:906
-#: src/common/hexchat.c:907
+#: src/common/birdchat.c:904 src/common/birdchat.c:905 src/common/birdchat.c:906
+#: src/common/birdchat.c:907
 msgid "KickBan"
 msgstr "퇴장 후 입장 금지"
 
-#: src/common/hexchat.c:917
+#: src/common/birdchat.c:917
 msgid "Leave Channel"
 msgstr "대화방 나가기"
 
-#: src/common/hexchat.c:918
+#: src/common/birdchat.c:918
 msgid "Join Channel..."
 msgstr "대화방 입장..."
 
-#: src/common/hexchat.c:919 src/fe-gtk/menu.c:1411
+#: src/common/birdchat.c:919 src/fe-gtk/menu.c:1411
 msgid "Enter Channel to Join:"
 msgstr "입장할 대화방을 입력하십시오:"
 
-#: src/common/hexchat.c:920
+#: src/common/birdchat.c:920
 msgid "Server Links"
 msgstr "서버 연결"
 
-#: src/common/hexchat.c:921
+#: src/common/birdchat.c:921
 msgid "Ping Server"
 msgstr "서버에 핑"
 
-#: src/common/hexchat.c:922
+#: src/common/birdchat.c:922
 msgid "Hide Version"
 msgstr "버전 숨기기"
 
-#: src/common/hexchat.c:932
+#: src/common/birdchat.c:932
 msgid "Op"
 msgstr "관리 권한"
 
-#: src/common/hexchat.c:933
+#: src/common/birdchat.c:933
 msgid "DeOp"
 msgstr "관리권 뺏기"
 
-#: src/common/hexchat.c:936
+#: src/common/birdchat.c:936
 msgid "bye"
 msgstr "안녕"
 
-#: src/common/hexchat.c:937
+#: src/common/birdchat.c:937
 #, c-format
 msgid "Enter reason to kick %s:"
 msgstr "%s님을 강제로 퇴장시키는 이유:"
 
-#: src/common/hexchat.c:938
+#: src/common/birdchat.c:938
 msgid "Send File"
 msgstr "파일 보내기"
 
-#: src/common/hexchat.c:939
+#: src/common/birdchat.c:939
 msgid "Dialog"
 msgstr "귓속말"
 
-#: src/common/hexchat.c:948
+#: src/common/birdchat.c:948
 msgid "WhoIs"
 msgstr "사용자 정보"
 
-#: src/common/hexchat.c:949
+#: src/common/birdchat.c:949
 msgid "Send"
 msgstr "보내기"
 
-#: src/common/hexchat.c:950
+#: src/common/birdchat.c:950
 msgid "Chat"
 msgstr "대화"
 
-#: src/common/hexchat.c:951 src/fe-gtk/banlist.c:847 src/fe-gtk/dccgui.c:889
+#: src/common/birdchat.c:951 src/fe-gtk/banlist.c:847 src/fe-gtk/dccgui.c:889
 #: src/fe-gtk/ignoregui.c:387 src/fe-gtk/urlgrab.c:214
 msgid "Clear"
 msgstr "지우기"
 
-#: src/common/hexchat.c:952
+#: src/common/birdchat.c:952
 msgid "Ping"
 msgstr "핑"
 
-#: src/common/hexchat.c:1125
+#: src/common/birdchat.c:1125
 #, c-format
 msgid ""
 "You do not have write access to %s. Nothing from this session can be saved."
 msgstr "%s에 쓰기 권한이 없습니다. 이 세션에서 저장할 수 없습니다."
 
-#: src/common/hexchat.c:1134
+#: src/common/birdchat.c:1134
 msgid ""
 "* Running IRC as root is stupid! You should\n"
 "  create a User Account and use that to login.\n"
@@ -568,7 +568,7 @@ msgid "EXECWRITE, sends data to the processes stdin"
 msgstr "EXECWRITE, 프로세스의 표준 입력으로 데이터를 보냅니다"
 
 #: src/common/outbound.c:3993
-msgid "EXPORTCONF, exports HexChat settings"
+msgid "EXPORTCONF, exports BirdChat settings"
 msgstr "EXPORTCONF, 헥스채트 설정을 내보냅니다"
 
 #: src/common/outbound.c:3996
@@ -747,7 +747,7 @@ msgstr "RECONNECT [<호스트>] [<포트>] [<암호>], 그냥 /RECONNECT는 현�
 
 #: src/common/outbound.c:4085
 msgid ""
-"RECV <text>, send raw data to HexChat, as if it was received from the IRC "
+"RECV <text>, send raw data to BirdChat, as if it was received from the IRC "
 "server"
 msgstr "RECV <텍스트>, IRC 서버의 데이터와 같은 원시 데이터를 헥스채트에 보냅니다"
 
@@ -890,8 +890,8 @@ msgid "Unknown Command %s. Try /help\n"
 msgstr "알 수 없는 %s 명령입니다. /help 명령을 사용하십시오\n"
 
 #: src/common/plugin.c:403
-msgid "No hexchat_plugin_init symbol; is this really a HexChat plugin?"
-msgstr "hexchat_plugin_init 심볼이 없습니다. 헥스채트 추가 기능이 맞습니까?"
+msgid "No birdchat_plugin_init symbol; is this really a BirdChat plugin?"
+msgstr "birdchat_plugin_init 심볼이 없습니다. 헥스채트 추가 기능이 맞습니까?"
 
 #: src/common/plugin-identd.c:175
 #, c-format
@@ -3470,7 +3470,7 @@ msgid "Execute command:"
 msgstr "연결시 명령:"
 
 #: src/fe-gtk/fe-gtk.c:89
-msgid "Open URL or execute command in an existing HexChat"
+msgid "Open URL or execute command in an existing BirdChat"
 msgstr "URL을 열거나 헥스채트의 명령을 실행합니다"
 
 #: src/fe-gtk/fe-gtk.c:91
@@ -3752,7 +3752,7 @@ msgid ""
 msgstr "이 서버에 대화방 또는 참여자 %d개(명)과 연결되어 있습니다. 모두 닫으시겠습니까?"
 
 #: src/fe-gtk/maingui.c:1177
-msgid "Quit HexChat?"
+msgid "Quit BirdChat?"
 msgstr "헥스채트를 끝낼까요?"
 
 #: src/fe-gtk/maingui.c:1197
@@ -4065,7 +4065,7 @@ msgid ""
 "%m  =  machine info\n"
 "%n  =  your nick\n"
 "%t  =  time/date\n"
-"%v  =  HexChat version\n"
+"%v  =  BirdChat version\n"
 "%2  =  word 2\n"
 "%3  =  word 3\n"
 "&2  =  word 2 to the end of line\n"
@@ -4133,7 +4133,7 @@ msgid ""
 "\n"
 "Putting a ! in front of the command\n"
 "indicates it should be sent to a\n"
-"shell instead of HexChat"
+"shell instead of BirdChat"
 msgstr "URL 처리기 - 특수 코드:\n\n%s  =  URL 문자열\n\n명령 앞에 ! 문자를 놓으십시오\n헥스채트 대신 쉘로 보내야 함을\n나타냅니다"
 
 #: src/fe-gtk/menu.c:1529

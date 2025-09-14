@@ -43,7 +43,7 @@
 #include "pixmaps.h"
 #include "chanlist.h"
 #include "joind.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "palette.h"
 #include "menu.h"
 #include "notifygui.h"
@@ -58,7 +58,7 @@
 #include <canberra.h>
 #endif
 
-GdkPixmap *channelwin_pix;
+GdkPixbuf *channelwin_pix;
 
 #ifdef USE_LIBCANBERRA
 static ca_context *ca_con;
@@ -270,6 +270,8 @@ static const char adwaita_workaround_rc[] =
 	"}"
 	"widget \"*.hexchat-inputbox\" style \"hexchat-input-workaround\"";
 
+/* Temporarily disabled for GTK3 migration - will be replaced with CSS theming */
+#if 0
 GtkStyle *
 create_input_style (GtkStyle *style)
 {
@@ -295,15 +297,16 @@ create_input_style (GtkStyle *style)
 
 		/* gnome-themes-standard 3.20+ relies on images to do theming
 		 * so we have to override that. */
-		g_object_get (settings, "gtk-theme-name", &theme_name, NULL);
+		/* Temporarily disabled for GTK3 migration - use CSS providers instead */
+		/* g_object_get (settings, "gtk-theme-name", &theme_name, NULL);
 		if (g_str_has_prefix (theme_name, "Adwaita") || g_str_has_prefix (theme_name, "Yaru"))
 			gtk_rc_parse_string (adwaita_workaround_rc);
-		g_free (theme_name);
+		g_free (theme_name); */
 
 		done_rc = TRUE;
-		sprintf (buf, cursor_color_rc, (colors[COL_FG].red >> 8),
-			(colors[COL_FG].green >> 8), (colors[COL_FG].blue >> 8));
-		gtk_rc_parse_string (buf);
+		/* sprintf (buf, cursor_color_rc, (int)(colors[COL_FG].red * 255),
+			(int)(colors[COL_FG].green * 255), (int)(colors[COL_FG].blue * 255));
+		gtk_rc_parse_string (buf); */
 	}
 
 	style->bg[GTK_STATE_NORMAL] = colors[COL_FG];
@@ -312,6 +315,7 @@ create_input_style (GtkStyle *style)
 
 	return style;
 }
+#endif
 
 void
 fe_init (void)
@@ -323,8 +327,10 @@ fe_init (void)
 #ifdef HAVE_GTK_MAC
 	gtkosx_application_set_dock_icon_pixbuf (osx_app, pix_hexchat);
 #endif
-	channelwin_pix = pixmap_load_from_file (prefs.hex_text_background);
-	input_style = create_input_style (gtk_style_new ());
+	/* Temporarily disabled for GTK3 migration */
+	channelwin_pix = NULL; /* pixmap_load_from_file (prefs.hex_text_background); */
+	/* Temporarily disabled for GTK3 migration */
+	input_style = NULL; /* create_input_style (gtk_style_new ()); */
 }
 
 #ifdef HAVE_GTK_MAC
@@ -698,7 +704,7 @@ fe_beep (session *sess)
 
 	if (ca_context_play (ca_con, 0, CA_PROP_EVENT_ID, "message-new-instant", NULL) != 0)
 #endif
-	gdk_beep ();
+	gdk_display_beep (gdk_display_get_default ());
 #endif
 }
 
@@ -1112,7 +1118,7 @@ fe_open_url_inner (const char *url)
 #else
 	char *escaped_url = maybe_escape_uri (url);
 	g_debug ("Opening URL \"%s\" (%s)", escaped_url, url);
-	gtk_show_uri (NULL, escaped_url, GDK_CURRENT_TIME, NULL);
+	gtk_show_uri_on_window (NULL, escaped_url, GDK_CURRENT_TIME, NULL);
 	g_free (escaped_url);
 #endif
 }
@@ -1178,17 +1184,21 @@ fe_server_event (server *serv, int type, int arg)
 			case FE_SE_CONNECTING:	/* connecting in progress */
 			case FE_SE_RECONDELAY:	/* reconnect delay begun */
 				/* enable Disconnect item */
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT], 1);
+				if (gui->menu_item[MENU_ID_DISCONNECT])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT], 1);
 				break;
 
 			case FE_SE_CONNECT:
 				/* enable Disconnect and Away menu items */
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_AWAY], 1);
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT], 1);
+				if (gui->menu_item[MENU_ID_AWAY])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_AWAY], 1);
+				if (gui->menu_item[MENU_ID_DISCONNECT])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT], 1);
 				break;
 
 			case FE_SE_LOGGEDIN:	/* end of MOTD */
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_JOIN], 1);
+				if (gui->menu_item[MENU_ID_JOIN])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_JOIN], 1);
 				/* if number of auto-join channels is zero, open joind */
 				if (arg == 0)
 					joind_open (serv);
@@ -1196,9 +1206,12 @@ fe_server_event (server *serv, int type, int arg)
 
 			case FE_SE_DISCONNECT:
 				/* disable Disconnect and Away menu items */
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_AWAY], 0);
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT], 0);
-				gtk_widget_set_sensitive (gui->menu_item[MENU_ID_JOIN], 0);
+				if (gui->menu_item[MENU_ID_AWAY])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_AWAY], 0);
+				if (gui->menu_item[MENU_ID_DISCONNECT])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT], 0);
+				if (gui->menu_item[MENU_ID_JOIN])
+					gtk_widget_set_sensitive (gui->menu_item[MENU_ID_JOIN], 0);
 				/* close the join-dialog, if one exists */
 				joind_close (serv);
 			}

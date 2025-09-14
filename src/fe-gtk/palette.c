@@ -37,135 +37,126 @@
 #include "../common/typedef.h"
 
 
-GdkColor colors[MAX_COL+1] = {
+GdkRGBA colors[MAX_COL+1] = {
 	/* Standard 99-color IRC palette */
-	{0, 0xffff, 0xffff, 0xffff}, /* 0 white */
-	{0, 0x0000, 0x0000, 0x0000}, /* 1 black */
-	{0, 0x0000, 0x0000, 0x7f7f}, /* 2 blue */
-	{0, 0x0000, 0x9393, 0x0000}, /* 3 green */
-	{0, 0xffff, 0x0000, 0x0000}, /* 4 red */
-	{0, 0x7f7f, 0x0000, 0x0000}, /* 5 light red */
-	{0, 0x9c9c, 0x0000, 0x9c9c}, /* 6 purple */
-	{0, 0xfcfc, 0x7f7f, 0x0000}, /* 7 orange */
-	{0, 0xffff, 0xffff, 0x0000}, /* 8 yellow */
-	{0, 0x0000, 0xfcfc, 0x0000}, /* 9 light green */
-	{0, 0x0000, 0x9393, 0x9393}, /* 10 aqua */
-	{0, 0x0000, 0xffff, 0xffff}, /* 11 light aqua */
-	{0, 0x0000, 0x0000, 0xfcfc}, /* 12 light blue */
-	{0, 0xffff, 0x0000, 0xffff}, /* 13 light purple */
-	{0, 0x7f7f, 0x7f7f, 0x7f7f}, /* 14 grey */
-	{0, 0xd2d2, 0xd2d2, 0xd2d2}, /* 15 light grey */
-	{0, 0x4747, 0x0000, 0x0000}, /* 16 */
-	{0, 0x4747, 0x2121, 0x0000}, /* 17 */
-	{0, 0x4747, 0x4747, 0x0000}, /* 18 */
-	{0, 0x3232, 0x4747, 0x0000}, /* 19 */
-	{0, 0x0000, 0x4747, 0x0000}, /* 20 */
-	{0, 0x0000, 0x4747, 0x2c2c}, /* 21 */
-	{0, 0x0000, 0x4747, 0x4747}, /* 22 */
-	{0, 0x0000, 0x2727, 0x4747}, /* 23 */
-	{0, 0x0000, 0x0000, 0x4747}, /* 24 */
-	{0, 0x2e2e, 0x0000, 0x4747}, /* 25 */
-	{0, 0x4747, 0x0000, 0x4747}, /* 26 */
-	{0, 0x4747, 0x0000, 0x2a2a}, /* 27 */
-	{0, 0x7474, 0x0000, 0x0000}, /* 28 */
-	{0, 0x7474, 0x3a3a, 0x0000}, /* 29 */
-	{0, 0x7474, 0x7474, 0x0000}, /* 30 */
-	{0, 0x5151, 0x7474, 0x0000}, /* 31 */
-	{0, 0x0000, 0x7474, 0x0000}, /* 32 */
-	{0, 0x0000, 0x7474, 0x4949}, /* 33 */
-	{0, 0x0000, 0x7474, 0x7474}, /* 34 */
-	{0, 0x0000, 0x4040, 0x7474}, /* 35 */
-	{0, 0x0000, 0x0000, 0x7474}, /* 36 */
-	{0, 0x4b4b, 0x0000, 0x7474}, /* 37 */
-	{0, 0x7474, 0x0000, 0x7474}, /* 38 */
-	{0, 0x7474, 0x0000, 0x4545}, /* 39 */
-	{0, 0xb5b5, 0x0000, 0x0000}, /* 40 */
-	{0, 0xb5b5, 0x6363, 0x0000}, /* 41 */
-	{0, 0xb5b5, 0xb5b5, 0x0000}, /* 42 */
-	{0, 0x7d7d, 0xb5b5, 0x0000}, /* 43 */
-	{0, 0x0000, 0xb5b5, 0x0000}, /* 44 */
-	{0, 0x0000, 0xb5b5, 0x7171}, /* 45 */
-	{0, 0x0000, 0xb5b5, 0xb5b5}, /* 46 */
-	{0, 0x0000, 0x6363, 0xb5b5}, /* 47 */
-	{0, 0x0000, 0x0000, 0xb5b5}, /* 48 */
-	{0, 0x7575, 0x0000, 0xb5b5}, /* 49 */
-	{0, 0xb5b5, 0x0000, 0xb5b5}, /* 50 */
-	{0, 0xb5b5, 0x0000, 0x6b6b}, /* 51 */
-	{0, 0xffff, 0x0000, 0x0000}, /* 52 */
-	{0, 0xffff, 0x8c8c, 0x0000}, /* 53 */
-	{0, 0xffff, 0xffff, 0x0000}, /* 54 */
-	{0, 0xb2b2, 0xffff, 0x0000}, /* 55 */
-	{0, 0x0000, 0xffff, 0x0000}, /* 56 */
-	{0, 0x0000, 0xffff, 0xa0a0}, /* 57 */
-	{0, 0x0000, 0xffff, 0xffff}, /* 58 */
-	{0, 0x0000, 0x8c8c, 0xffff}, /* 59 */
-	{0, 0x0000, 0x0000, 0xffff}, /* 60 */
-	{0, 0xa5a5, 0x0000, 0xffff}, /* 61 */
-	{0, 0xffff, 0x0000, 0xffff}, /* 62 */
-	{0, 0xffff, 0x0000, 0x9898}, /* 63 */
-	{0, 0xffff, 0x5959, 0x5959}, /* 64 */
-	{0, 0xffff, 0xb4b4, 0x5959}, /* 65 */
-	{0, 0xffff, 0xffff, 0x7171}, /* 66 */
-	{0, 0xcfcf, 0xffff, 0x6060}, /* 67 */
-	{0, 0x6f6f, 0xffff, 0x6f6f}, /* 68 */
-	{0, 0x6565, 0xffff, 0xc9c9}, /* 69 */
-	{0, 0x6d6d, 0xffff, 0xffff}, /* 70 */
-	{0, 0x5959, 0xb4b4, 0xffff}, /* 71 */
-	{0, 0x5959, 0x5959, 0xffff}, /* 72 */
-	{0, 0xc4c4, 0x5959, 0xffff}, /* 73 */
-	{0, 0xffff, 0x6666, 0xffff}, /* 74 */
-	{0, 0xffff, 0x5959, 0xbcbc}, /* 75 */
-	{0, 0xffff, 0x9c9c, 0x9c9c}, /* 76 */
-	{0, 0xffff, 0xd3d3, 0x9c9c}, /* 77 */
-	{0, 0xffff, 0xffff, 0x9c9c}, /* 78 */
-	{0, 0xe2e2, 0xffff, 0x9c9c}, /* 79 */
-	{0, 0x9c9c, 0xffff, 0x9c9c}, /* 80 */
-	{0, 0x9c9c, 0xffff, 0xdbdb}, /* 81 */
-	{0, 0x9c9c, 0xffff, 0xffff}, /* 82 */
-	{0, 0x9c9c, 0xd3d3, 0xffff}, /* 83 */
-	{0, 0x9c9c, 0x9c9c, 0xffff}, /* 84 */
-	{0, 0xdcdc, 0x9c9c, 0xffff}, /* 85 */
-	{0, 0xffff, 0x9c9c, 0xffff}, /* 86 */
-	{0, 0xffff, 0x9494, 0xd3d3}, /* 87 */
-	{0, 0x0000, 0x0000, 0x0000}, /* 88 */
-	{0, 0x1313, 0x1313, 0x1313}, /* 89 */
-	{0, 0x2828, 0x2828, 0x2828}, /* 90 */
-	{0, 0x3636, 0x3636, 0x3636}, /* 91 */
-	{0, 0x4d4d, 0x4d4d, 0x4d4d}, /* 92 */
-	{0, 0x6565, 0x6565, 0x6565}, /* 93 */
-	{0, 0x8181, 0x8181, 0x8181}, /* 94 */
-	{0, 0x9f9f, 0x9f9f, 0x9f9f}, /* 95 */
-	{0, 0xbcbc, 0xbcbc, 0xbcbc}, /* 96 */
-	{0, 0xe2e2, 0xe2e2, 0xe2e2}, /* 97 */
-	{0, 0xffff, 0xffff, 0xffff}, /* 98 */
+	{1.0, 1.0, 1.0, 1.0}, /* 0 white */
+	{0.0, 0.0, 0.0, 1.0}, /* 1 black */
+	{0.0, 0.0, 0.498, 1.0}, /* 2 blue */
+	{0.0, 0.576, 0.0, 1.0}, /* 3 green */
+	{1.0, 0.0, 0.0, 1.0}, /* 4 red */
+	{0.498, 0.0, 0.0, 1.0}, /* 5 light red */
+	{0.612, 0.0, 0.612, 1.0}, /* 6 purple */
+	{0.988, 0.498, 0.0, 1.0}, /* 7 orange */
+	{1.0, 1.0, 0.0, 1.0}, /* 8 yellow */
+	{0.0, 0.988, 0.0, 1.0}, /* 9 light green */
+	{0.0, 0.576, 0.576, 1.0}, /* 10 aqua */
+	{0.0, 1.0, 1.0, 1.0}, /* 11 light aqua */
+	{0.0, 0.0, 0.988, 1.0}, /* 12 light blue */
+	{1.0, 0.0, 1.0, 1.0}, /* 13 light purple */
+	{0.498, 0.498, 0.498, 1.0}, /* 14 grey */
+	{0.824, 0.824, 0.824, 1.0}, /* 15 light grey */
+	{0.278, 0.0, 0.0, 1.0}, /* 16 */
+	{0.278, 0.129, 0.0, 1.0}, /* 17 */
+	{0.278, 0.278, 0.0, 1.0}, /* 18 */
+	{0.196, 0.278, 0.0, 1.0}, /* 19 */
+	{0.0, 0.278, 0.0, 1.0}, /* 20 */
+	{0.0, 0.278, 0.173, 1.0}, /* 21 */
+	{0.0, 0.278, 0.278, 1.0}, /* 22 */
+	{0.0, 0.153, 0.278, 1.0}, /* 23 */
+	{0.0, 0.0, 0.278, 1.0}, /* 24 */
+	{0.18, 0.0, 0.278, 1.0}, /* 25 */
+	{0.278, 0.0, 0.278, 1.0}, /* 26 */
+	{0.278, 0.0, 0.165, 1.0}, /* 27 */
+	{0.455, 0.0, 0.0, 1.0}, /* 28 */
+	{0.455, 0.227, 0.0, 1.0}, /* 29 */
+	{0.455, 0.455, 0.0, 1.0}, /* 30 */
+	{0.318, 0.455, 0.0, 1.0}, /* 31 */
+	{0.0, 0.455, 0.0, 1.0}, /* 32 */
+	{0.0, 0.455, 0.286, 1.0}, /* 33 */
+	{0.0, 0.455, 0.455, 1.0}, /* 34 */
+	{0.0, 0.251, 0.455, 1.0}, /* 35 */
+	{0.0, 0.0, 0.455, 1.0}, /* 36 */
+	{0.294, 0.0, 0.455, 1.0}, /* 37 */
+	{0.455, 0.0, 0.455, 1.0}, /* 38 */
+	{0.455, 0.0, 0.271, 1.0}, /* 39 */
+	{0.71, 0.0, 0.0, 1.0}, /* 40 */
+	{0.71, 0.388, 0.0, 1.0}, /* 41 */
+	{0.71, 0.71, 0.0, 1.0}, /* 42 */
+	{0.49, 0.71, 0.0, 1.0}, /* 43 */
+	{0.0, 0.71, 0.0, 1.0}, /* 44 */
+	{0.0, 0.71, 0.443, 1.0}, /* 45 */
+	{0.0, 0.71, 0.71, 1.0}, /* 46 */
+	{0.0, 0.388, 0.71, 1.0}, /* 47 */
+	{0.0, 0.0, 0.71, 1.0}, /* 48 */
+	{0.459, 0.0, 0.71, 1.0}, /* 49 */
+	{0.71, 0.0, 0.71, 1.0}, /* 50 */
+	{0.71, 0.0, 0.42, 1.0}, /* 51 */
+	{1.0, 0.0, 0.0, 1.0}, /* 52 */
+	{1.0, 0.549, 0.0, 1.0}, /* 53 */
+	{1.0, 1.0, 0.0, 1.0}, /* 54 */
+	{0.698, 1.0, 0.0, 1.0}, /* 55 */
+	{0.0, 1.0, 0.0, 1.0}, /* 56 */
+	{0.0, 1.0, 0.627, 1.0}, /* 57 */
+	{0.0, 1.0, 1.0, 1.0}, /* 58 */
+	{0.0, 0.549, 1.0, 1.0}, /* 59 */
+	{0.0, 0.0, 1.0, 1.0}, /* 60 */
+	{0.647, 0.0, 1.0, 1.0}, /* 61 */
+	{1.0, 0.0, 1.0, 1.0}, /* 62 */
+	{1.0, 0.0, 0.596, 1.0}, /* 63 */
+	{1.0, 0.349, 0.349, 1.0}, /* 64 */
+	{1.0, 0.706, 0.349, 1.0}, /* 65 */
+	{1.0, 1.0, 0.443, 1.0}, /* 66 */
+	{0.812, 1.0, 0.376, 1.0}, /* 67 */
+	{0.435, 1.0, 0.435, 1.0}, /* 68 */
+	{0.396, 1.0, 0.788, 1.0}, /* 69 */
+	{0.427, 1.0, 1.0, 1.0}, /* 70 */
+	{0.349, 0.706, 1.0, 1.0}, /* 71 */
+	{0.349, 0.349, 1.0, 1.0}, /* 72 */
+	{0.769, 0.349, 1.0, 1.0}, /* 73 */
+	{1.0, 0.4, 1.0, 1.0}, /* 74 */
+	{1.0, 0.349, 0.737, 1.0}, /* 75 */
+	{1.0, 0.612, 0.612, 1.0}, /* 76 */
+	{1.0, 0.827, 0.612, 1.0}, /* 77 */
+	{1.0, 1.0, 0.612, 1.0}, /* 78 */
+	{0.886, 1.0, 0.612, 1.0}, /* 79 */
+	{0.612, 1.0, 0.612, 1.0}, /* 80 */
+	{0.612, 1.0, 0.859, 1.0}, /* 81 */
+	{0.612, 1.0, 1.0, 1.0}, /* 82 */
+	{0.612, 0.827, 1.0, 1.0}, /* 83 */
+	{0.612, 0.612, 1.0, 1.0}, /* 84 */
+	{0.863, 0.612, 1.0, 1.0}, /* 85 */
+	{1.0, 0.612, 1.0, 1.0}, /* 86 */
+	{1.0, 0.58, 0.827, 1.0}, /* 87 */
+	{0.0, 0.0, 0.0, 1.0}, /* 88 */
+	{0.075, 0.075, 0.075, 1.0}, /* 89 */
+	{0.157, 0.157, 0.157, 1.0}, /* 90 */
+	{0.212, 0.212, 0.212, 1.0}, /* 91 */
+	{0.302, 0.302, 0.302, 1.0}, /* 92 */
+	{0.396, 0.396, 0.396, 1.0}, /* 93 */
+	{0.506, 0.506, 0.506, 1.0}, /* 94 */
+	{0.624, 0.624, 0.624, 1.0}, /* 95 */
+	{0.737, 0.737, 0.737, 1.0}, /* 96 */
+	{0.886, 0.886, 0.886, 1.0}, /* 97 */
+	{1.0, 1.0, 1.0, 1.0}, /* 98 */
 
 	/* system colors */
-	{0, 0xd3d3, 0xd7d7, 0xcfcf}, /* 99 marktext Fore (white) */
-	{0, 0x2020, 0x4a4a, 0x8787}, /* 100 marktext Back (blue) */
-	{0, 0x2512, 0x29e8, 0x2b85}, /* 101 foreground (black) */
-	{0, 0xfae0, 0xfae0, 0xf8c4}, /* 102 background (white) */
-	{0, 0x8f8f, 0x3939, 0x0202}, /* 103 marker line (red) */
-	{0, 0x3434, 0x6565, 0xa4a4}, /* 104 tab New Data (dark red) */
-	{0, 0x4e4e, 0x9a9a, 0x0606}, /* 105 tab Nick Mentioned (blue) */
-	{0, 0xcece, 0x5c5c, 0x0000}, /* 106 tab New Message (red) */
-	{0, 0x8888, 0x8a8a, 0x8585}, /* 107 away user (grey) */
-	{0, 0xa4a4, 0x0000, 0x0000}, /* 108 spell checker color (red) */
+	{0.827, 0.843, 0.812, 1.0}, /* 99 marktext Fore (white) */
+	{0.125, 0.29, 0.529, 1.0}, /* 100 marktext Back (blue) */
+	{0.145, 0.164, 0.17, 1.0}, /* 101 foreground (black) */
+	{0.98, 0.98, 0.972, 1.0}, /* 102 background (white) */
+	{0.561, 0.224, 0.008, 1.0}, /* 103 marker line (red) */
+	{0.204, 0.396, 0.643, 1.0}, /* 104 tab New Data (dark red) */
+	{0.306, 0.604, 0.024, 1.0}, /* 105 tab Nick Mentioned (blue) */
+	{0.808, 0.361, 0.0, 1.0}, /* 106 tab New Message (red) */
+	{0.533, 0.541, 0.522, 1.0}, /* 107 away user (grey) */
+	{0.643, 0.0, 0.0, 1.0}, /* 108 spell checker color (red) */
 };
 
 void
 palette_alloc (GtkWidget * widget)
 {
-	int i;
-	static int done_alloc = FALSE;
-	GdkColormap *cmap;
-
-	if (!done_alloc)		  /* don't do it again */
-	{
-		done_alloc = TRUE;
-		cmap = gtk_widget_get_colormap (widget);
-		for (i = MAX_COL; i >= 0; i--)
-			gdk_colormap_alloc_color (cmap, &colors[i], FALSE, TRUE);
-	}
+	/* GTK3: Color allocation is automatic, no manual allocation needed */
+	(void)widget; /* suppress unused parameter warning */
 }
 
 void
@@ -194,9 +185,10 @@ palette_load (void)
 				g_snprintf (prefname, sizeof prefname, "color_%d", i);
 				if (cfg_get_color (cfg, prefname, &red, &green, &blue))
 				{
-					colors[i].red = red;
-					colors[i].green = green;
-					colors[i].blue = blue;
+					colors[i].red = red / 65535.0;
+					colors[i].green = green / 65535.0;
+					colors[i].blue = blue / 65535.0;
+					colors[i].alpha = 1.0;
 				}
 			}
 			/* migrate high system colors mapped at [256, ...) */
@@ -205,9 +197,10 @@ palette_load (void)
 				g_snprintf (prefname, sizeof prefname, "color_%d", i);
 				if (cfg_get_color (cfg, prefname, &red, &green, &blue))
 				{
-					colors[j].red = red;
-					colors[j].green = green;
-					colors[j].blue = blue;
+					colors[j].red = red / 65535.0;
+					colors[j].green = green / 65535.0;
+					colors[j].blue = blue / 65535.0;
+					colors[j].alpha = 1.0;
 				}
 			}
 		}
@@ -219,9 +212,10 @@ palette_load (void)
 				g_snprintf (prefname, sizeof prefname, "color_%d", i);
 				if (cfg_get_color (cfg, prefname, &red, &green, &blue))
 				{
-					colors[i].red = red;
-					colors[i].green = green;
-					colors[i].blue = blue;
+					colors[i].red = red / 65535.0;
+					colors[i].green = green / 65535.0;
+					colors[i].blue = blue / 65535.0;
+					colors[i].alpha = 1.0;
 				}
 			}
 			/* system colors are still mapped at [256, ...) */
@@ -230,9 +224,10 @@ palette_load (void)
 				g_snprintf (prefname, sizeof prefname, "color_%d", i);
 				if (cfg_get_color (cfg, prefname, &red, &green, &blue))
 				{
-					colors[j].red = red;
-					colors[j].green = green;
-					colors[j].blue = blue;
+					colors[j].red = red / 65535.0;
+					colors[j].green = green / 65535.0;
+					colors[j].blue = blue / 65535.0;
+					colors[j].alpha = 1.0;
 				}
 			}
 		}
@@ -254,14 +249,14 @@ palette_save (void)
 		for (i = 0; i < MIRC_COLS; i++)
 		{
 			g_snprintf (prefname, sizeof prefname, "color_%d", i);
-			cfg_put_color (fh, colors[i].red, colors[i].green, colors[i].blue, prefname);
+			cfg_put_color (fh, (guint16)(colors[i].red * 65535), (guint16)(colors[i].green * 65535), (guint16)(colors[i].blue * 65535), prefname);
 		}
 
 		/* system colors are still mapped at 256+ */
 		for (i = 256, j = COL_START_SYS; j < MAX_COL+1; i++, j++)
 		{
 			g_snprintf (prefname, sizeof prefname, "color_%d", i);
-			cfg_put_color (fh, colors[j].red, colors[j].green, colors[j].blue, prefname);
+			cfg_put_color (fh, (guint16)(colors[j].red * 65535), (guint16)(colors[j].green * 65535), (guint16)(colors[j].blue * 65535), prefname);
 		}
 
 		close (fh);

@@ -27,7 +27,7 @@
 	{									\
 		NULL, /* account name */		\
 		FALSE, /* identified to nick */ \
-		(time_t)0, /* timestamp */		\
+		time(0), /* timestamp */		\
 	}
 
 #define STRIP_COLON(word, word_eol, idx) (word)[(idx)][0] == ':' ? (word_eol)[(idx)]+1 : (word)[(idx)]

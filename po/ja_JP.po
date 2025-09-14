@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the hexchat package.
+# This file is distributed under the same license as the birdchat package.
 # 
 # Translators:
 # k725, 2014
@@ -12,12 +12,12 @@
 # pabook_32 <inactive+pabook_32@transifex.com>, 2015
 msgid ""
 msgstr ""
-"Project-Id-Version: HexChat\n"
+"Project-Id-Version: BirdChat\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-04-03 16:10-0400\n"
 "PO-Revision-Date: 2020-01-03 01:18+0000\n"
 "Last-Translator: Itsuki Toyota <titsuki@cpan.org>\n"
-"Language-Team: Japanese (Japan) (http://www.transifex.com/hexchat/hexchat/language/ja_JP/)\n"
+"Language-Team: Japanese (Japan) (http://www.transifex.com/birdchat/birdchat/language/ja_JP/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -27,8 +27,8 @@ msgstr ""
 #: data/misc/io.github.Hexchat.appdata.xml.in:4
 #: data/misc/io.github.Hexchat.appdata.xml.in:5
 #: data/misc/io.github.Hexchat.desktop.in.in:3
-msgid "HexChat"
-msgstr "HexChat"
+msgid "BirdChat"
+msgstr "BirdChat"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:9
 #: data/misc/io.github.Hexchat.desktop.in.in:4
@@ -37,16 +37,16 @@ msgstr "IRCクライアント"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:11
 msgid ""
-"HexChat is an easy to use yet extensible IRC Client. It allows you to "
+"BirdChat is an easy to use yet extensible IRC Client. It allows you to "
 "securely join multiple networks and talk to users privately or in channels "
 "using a customizable interface. You can even transfer files."
-msgstr "HexChatは使いやすく、しかも拡張可能なIRCクライアントです。安全に複数のネットワークに参加でき、カスタマイズ可能なインターフェイスを使用してチャネルのユーザーと話すことが可能、さらにファイルを転送することができます。"
+msgstr "BirdChatは使いやすく、しかも拡張可能なIRCクライアントです。安全に複数のネットワークに参加でき、カスタマイズ可能なインターフェイスを使用してチャネルのユーザーと話すことが可能、さらにファイルを転送することができます。"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:12
 msgid ""
-"HexChat supports features such as: DCC, SASL, proxies, spellcheck, alerts, "
+"BirdChat supports features such as: DCC, SASL, proxies, spellcheck, alerts, "
 "logging, custom themes, and Python/Perl scripts."
-msgstr "HexChatは、次の機能をサポートしています: DCC, SASL, プロキシ, スペルチェック, アラート, カスタムテーマ, Python/Perl スクリプト"
+msgstr "BirdChatは、次の機能をサポートしています: DCC, SASL, プロキシ, スペルチェック, アラート, カスタムテーマ, Python/Perl スクリプト"
 
 #: data/misc/io.github.Hexchat.appdata.xml.in:22
 msgid "Main Chat Window"
@@ -62,7 +62,7 @@ msgstr ""
 
 #: data/misc/io.github.Hexchat.desktop.in.in:8
 #: data/misc/io.github.Hexchat.ThemeManager.desktop.in:5
-msgid "hexchat"
+msgid "birdchat"
 msgstr ""
 
 #: data/misc/io.github.Hexchat.desktop.in.in:19
@@ -70,8 +70,8 @@ msgid "Open Safe Mode"
 msgstr "セーフモードで開く"
 
 #: data/misc/io.github.Hexchat.ThemeManager.desktop.in:3
-msgid "HexChat Theme Manager"
-msgstr "HexChatテーママネージャー"
+msgid "BirdChat Theme Manager"
+msgstr "BirdChatテーママネージャー"
 
 #. 0 means unlimited
 #. STRINGS
@@ -164,142 +164,142 @@ msgstr "%s が「%s」を提案しています。受け付けますか?"
 msgid "No active DCCs\n"
 msgstr "アクティブな DCC はありません\n"
 
-#: src/common/hexchat.c:885
+#: src/common/birdchat.c:885
 msgid "_Open Dialog Window"
 msgstr "ダイアログウィンドウを開く(_O)"
 
-#: src/common/hexchat.c:886
+#: src/common/birdchat.c:886
 msgid "_Send a File"
 msgstr "ファイルを送信(_S)"
 
-#: src/common/hexchat.c:887
+#: src/common/birdchat.c:887
 msgid "_User Info (WhoIs)"
 msgstr "ユーザー情報(Whois)(_U)"
 
-#: src/common/hexchat.c:888
+#: src/common/birdchat.c:888
 msgid "_Add to Friends List"
 msgstr "フレンドリストに追加(_A)"
 
-#: src/common/hexchat.c:889
+#: src/common/birdchat.c:889
 msgid "_Ignore"
 msgstr "無視(_I)"
 
-#: src/common/hexchat.c:890
+#: src/common/birdchat.c:890
 msgid "O_perator Actions"
 msgstr "オペレーターアクション(_P)"
 
-#: src/common/hexchat.c:892
+#: src/common/birdchat.c:892
 msgid "Give Ops"
 msgstr "オペレーター権限を与える"
 
-#: src/common/hexchat.c:893
+#: src/common/birdchat.c:893
 msgid "Take Ops"
 msgstr "オペレーター権限を奪う"
 
-#: src/common/hexchat.c:894
+#: src/common/birdchat.c:894
 msgid "Give Voice"
 msgstr "発言権を与える"
 
-#: src/common/hexchat.c:895
+#: src/common/birdchat.c:895
 msgid "Take Voice"
 msgstr "発言権を奪う"
 
-#: src/common/hexchat.c:897
+#: src/common/birdchat.c:897
 msgid "Kick/Ban"
 msgstr "キック/バン"
 
-#: src/common/hexchat.c:898 src/common/hexchat.c:935
+#: src/common/birdchat.c:898 src/common/birdchat.c:935
 msgid "Kick"
 msgstr "キック"
 
-#: src/common/hexchat.c:899 src/common/hexchat.c:900 src/common/hexchat.c:901
-#: src/common/hexchat.c:902 src/common/hexchat.c:903 src/common/hexchat.c:934
+#: src/common/birdchat.c:899 src/common/birdchat.c:900 src/common/birdchat.c:901
+#: src/common/birdchat.c:902 src/common/birdchat.c:903 src/common/birdchat.c:934
 #: src/fe-gtk/banlist.c:50
 msgid "Ban"
 msgstr "バン"
 
-#: src/common/hexchat.c:904 src/common/hexchat.c:905 src/common/hexchat.c:906
-#: src/common/hexchat.c:907
+#: src/common/birdchat.c:904 src/common/birdchat.c:905 src/common/birdchat.c:906
+#: src/common/birdchat.c:907
 msgid "KickBan"
 msgstr "キックバン"
 
-#: src/common/hexchat.c:917
+#: src/common/birdchat.c:917
 msgid "Leave Channel"
 msgstr "チャンネルを離れる"
 
-#: src/common/hexchat.c:918
+#: src/common/birdchat.c:918
 msgid "Join Channel..."
 msgstr "チャンネルへ参加..."
 
-#: src/common/hexchat.c:919 src/fe-gtk/menu.c:1411
+#: src/common/birdchat.c:919 src/fe-gtk/menu.c:1411
 msgid "Enter Channel to Join:"
 msgstr "参加するチャンネルを入力:"
 
-#: src/common/hexchat.c:920
+#: src/common/birdchat.c:920
 msgid "Server Links"
 msgstr "サーバーリンク"
 
-#: src/common/hexchat.c:921
+#: src/common/birdchat.c:921
 msgid "Ping Server"
 msgstr "ピングサーバー"
 
-#: src/common/hexchat.c:922
+#: src/common/birdchat.c:922
 msgid "Hide Version"
 msgstr "バージョンを隠す"
 
-#: src/common/hexchat.c:932
+#: src/common/birdchat.c:932
 msgid "Op"
 msgstr "オペレーター"
 
-#: src/common/hexchat.c:933
+#: src/common/birdchat.c:933
 msgid "DeOp"
 msgstr "オペレーター権限剥奪"
 
-#: src/common/hexchat.c:936
+#: src/common/birdchat.c:936
 msgid "bye"
 msgstr "さようなら"
 
-#: src/common/hexchat.c:937
+#: src/common/birdchat.c:937
 #, c-format
 msgid "Enter reason to kick %s:"
 msgstr "%s をキックする理由を入力:"
 
-#: src/common/hexchat.c:938
+#: src/common/birdchat.c:938
 msgid "Send File"
 msgstr ""
 
-#: src/common/hexchat.c:939
+#: src/common/birdchat.c:939
 msgid "Dialog"
 msgstr "ダイアログ"
 
-#: src/common/hexchat.c:948
+#: src/common/birdchat.c:948
 msgid "WhoIs"
 msgstr "WhoIs"
 
-#: src/common/hexchat.c:949
+#: src/common/birdchat.c:949
 msgid "Send"
 msgstr "送信"
 
-#: src/common/hexchat.c:950
+#: src/common/birdchat.c:950
 msgid "Chat"
 msgstr "Chat"
 
-#: src/common/hexchat.c:951 src/fe-gtk/banlist.c:847 src/fe-gtk/dccgui.c:889
+#: src/common/birdchat.c:951 src/fe-gtk/banlist.c:847 src/fe-gtk/dccgui.c:889
 #: src/fe-gtk/ignoregui.c:387 src/fe-gtk/urlgrab.c:214
 msgid "Clear"
 msgstr "消去"
 
-#: src/common/hexchat.c:952
+#: src/common/birdchat.c:952
 msgid "Ping"
 msgstr "Ping"
 
-#: src/common/hexchat.c:1125
+#: src/common/birdchat.c:1125
 #, c-format
 msgid ""
 "You do not have write access to %s. Nothing from this session can be saved."
 msgstr "%s へのに書き込み許可がありません。このセッションの何も保存されません。"
 
-#: src/common/hexchat.c:1134
+#: src/common/birdchat.c:1134
 msgid ""
 "* Running IRC as root is stupid! You should\n"
 "  create a User Account and use that to login.\n"
@@ -571,7 +571,7 @@ msgid "EXECWRITE, sends data to the processes stdin"
 msgstr "EXECWRITE, プロセスの標準入力へデータを送信する"
 
 #: src/common/outbound.c:3993
-msgid "EXPORTCONF, exports HexChat settings"
+msgid "EXPORTCONF, exports BirdChat settings"
 msgstr ""
 
 #: src/common/outbound.c:3996
@@ -750,7 +750,7 @@ msgstr "RECONNECT [<ホスト>] [<ポート>] [<パスワード>], /RECONNECTだ
 
 #: src/common/outbound.c:4085
 msgid ""
-"RECV <text>, send raw data to HexChat, as if it was received from the IRC "
+"RECV <text>, send raw data to BirdChat, as if it was received from the IRC "
 "server"
 msgstr ""
 
@@ -893,7 +893,7 @@ msgid "Unknown Command %s. Try /help\n"
 msgstr ""
 
 #: src/common/plugin.c:403
-msgid "No hexchat_plugin_init symbol; is this really a HexChat plugin?"
+msgid "No birdchat_plugin_init symbol; is this really a BirdChat plugin?"
 msgstr ""
 
 #: src/common/plugin-identd.c:175
@@ -3473,7 +3473,7 @@ msgid "Execute command:"
 msgstr "コマンド実行:"
 
 #: src/fe-gtk/fe-gtk.c:89
-msgid "Open URL or execute command in an existing HexChat"
+msgid "Open URL or execute command in an existing BirdChat"
 msgstr ""
 
 #: src/fe-gtk/fe-gtk.c:91
@@ -3755,8 +3755,8 @@ msgid ""
 msgstr ""
 
 #: src/fe-gtk/maingui.c:1177
-msgid "Quit HexChat?"
-msgstr "HexChatを終了しますか?"
+msgid "Quit BirdChat?"
+msgstr "BirdChatを終了しますか?"
 
 #: src/fe-gtk/maingui.c:1197
 msgid "Don't ask next time."
@@ -4068,7 +4068,7 @@ msgid ""
 "%m  =  machine info\n"
 "%n  =  your nick\n"
 "%t  =  time/date\n"
-"%v  =  HexChat version\n"
+"%v  =  BirdChat version\n"
 "%2  =  word 2\n"
 "%3  =  word 3\n"
 "&2  =  word 2 to the end of line\n"
@@ -4079,7 +4079,7 @@ msgid ""
 "\n"
 "%2 would be \"john\"\n"
 "&2 would be \"john hello\"."
-msgstr "ユーザーコマンド - 特殊なコード:\n\n%c = 現在のチャンネル\n%e = 現在のネットワーク名\n%m = マシン情報\n%n = 自分のニック\n%t = 時間/日付\n%v = HexChatのバージョン\n%2 = 単語 2\n%3 = 単語 3\n&2 = 行の末尾にある単語 2\n&3 = 行の末尾にある単語 3\n\n例:\n/cmd john hello\n\n%2 \"john\" になります\n&2 \"john hello\" になります"
+msgstr "ユーザーコマンド - 特殊なコード:\n\n%c = 現在のチャンネル\n%e = 現在のネットワーク名\n%m = マシン情報\n%n = 自分のニック\n%t = 時間/日付\n%v = BirdChatのバージョン\n%2 = 単語 2\n%3 = 単語 3\n&2 = 行の末尾にある単語 2\n&3 = 行の末尾にある単語 3\n\n例:\n/cmd john hello\n\n%2 \"john\" になります\n&2 \"john hello\" になります"
 
 #: src/fe-gtk/menu.c:1486
 msgid ""
@@ -4136,7 +4136,7 @@ msgid ""
 "\n"
 "Putting a ! in front of the command\n"
 "indicates it should be sent to a\n"
-"shell instead of HexChat"
+"shell instead of BirdChat"
 msgstr ""
 
 #: src/fe-gtk/menu.c:1529
@@ -4425,7 +4425,7 @@ msgstr "コンテンツ(_C)"
 
 #: src/fe-gtk/menu.c:1850
 msgid "_About"
-msgstr "HexChat について(_A)"
+msgstr "BirdChat について(_A)"
 
 #: src/fe-gtk/menu.c:2356
 msgid "_Attach"

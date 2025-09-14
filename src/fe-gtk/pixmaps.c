@@ -49,26 +49,23 @@ GdkPixbuf *pix_tree_util;
 GdkPixbuf *pix_book;
 GdkPixbuf *pix_hexchat;
 
-static GdkPixmap *
+static GdkPixbuf *
 pixmap_load_from_file_real (char *file)
 {
 	GdkPixbuf *img;
-	GdkPixmap *pixmap;
 
 	img = gdk_pixbuf_new_from_file (file, 0);
 	if (!img)
 		return NULL;
-	gdk_pixbuf_render_pixmap_and_mask (img, &pixmap, NULL, 128);
-	g_object_unref (img);
 
-	return pixmap;
+	return img;
 }
 
-GdkPixmap *
+GdkPixbuf *
 pixmap_load_from_file (char *filename)
 {
 	char buf[256];
-	GdkPixmap *pix;
+	GdkPixbuf *pix;
 
 	if (filename[0] == '\0')
 		return NULL;

@@ -49,7 +49,7 @@
 #include "chanview.h"
 #include "pixmaps.h"
 #include "plugin-tray.h"
-#include "xtext.h"
+#include "gtk-xtext-view.h"
 #include "sexy-spell-entry.h"
 #include "gtkutil.h"
 
@@ -97,7 +97,7 @@ static PangoAttrList *newmsg_list;
 static PangoAttrList *plain_list = NULL;
 
 static PangoAttrList *
-mg_attr_list_create (GdkColor *col, int size)
+mg_attr_list_create (GdkRGBA *col, int size)
 {
 	PangoAttribute *attr;
 	PangoAttrList *list;
@@ -106,7 +106,8 @@ mg_attr_list_create (GdkColor *col, int size)
 
 	if (col)
 	{
-		attr = pango_attr_foreground_new (col->red, col->green, col->blue);
+		/* Convert GdkRGBA (0.0-1.0) to 16-bit values (0-65535) for Pango */
+		attr = pango_attr_foreground_new ((guint16)(col->red * 65535), (guint16)(col->green * 65535), (guint16)(col->blue * 65535));
 		attr->start_index = 0;
 		attr->end_index = 0xffff;
 		pango_attr_list_insert (list, attr);
@@ -559,13 +560,11 @@ mg_progressbar_update (GtkWidget *bar)
 		if (type == 0)
 		{
 			type = 1;
-			gtk_progress_bar_set_orientation ((GtkProgressBar *) bar,
-														 GTK_PROGRESS_RIGHT_TO_LEFT);
+			gtk_widget_set_direction (bar, GTK_TEXT_DIR_RTL);
 		} else
 		{
 			type = 0;
-			gtk_progress_bar_set_orientation ((GtkProgressBar *) bar,
-														 GTK_PROGRESS_LEFT_TO_RIGHT);
+			gtk_widget_set_direction (bar, GTK_TEXT_DIR_LTR);
 		}
 		pos = 0.05;
 	}
@@ -952,9 +951,12 @@ mg_populate (session *sess)
 
 	/* menu items */
 	menu_set_away (gui, sess->server->is_away);
-	gtk_widget_set_sensitive (gui->menu_item[MENU_ID_AWAY], sess->server->connected);
-	gtk_widget_set_sensitive (gui->menu_item[MENU_ID_JOIN], sess->server->end_of_motd);
-	gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT],
+	if (gui->menu_item[MENU_ID_AWAY])
+		gtk_widget_set_sensitive (gui->menu_item[MENU_ID_AWAY], sess->server->connected);
+	if (gui->menu_item[MENU_ID_JOIN])
+		gtk_widget_set_sensitive (gui->menu_item[MENU_ID_JOIN], sess->server->end_of_motd);
+	if (gui->menu_item[MENU_ID_DISCONNECT])
+		gtk_widget_set_sensitive (gui->menu_item[MENU_ID_DISCONNECT],
 									  sess->server->connected || sess->server->recondelay_tag);
 
 	mg_set_topic_tip (sess);
@@ -1160,7 +1162,6 @@ mg_open_quit_dialog (gboolean minimize_button)
 	GtkWidget *image;
 	GtkWidget *checkbutton1;
 	GtkWidget *label;
-	GtkWidget *dialog_action_area1;
 	GtkWidget *button;
 	char *text, *connecttext;
 	int cons;
@@ -1189,24 +1190,23 @@ mg_open_quit_dialog (gboolean minimize_button)
 	dialog_vbox1 = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
 	gtk_widget_show (dialog_vbox1);
 
-	table1 = gtk_table_new (2, 2, FALSE);
+	table1 = gtk_grid_new ();
 	gtk_widget_show (table1);
 	gtk_box_pack_start (GTK_BOX (dialog_vbox1), table1, TRUE, TRUE, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (table1), 6);
-	gtk_table_set_row_spacings (GTK_TABLE (table1), 12);
-	gtk_table_set_col_spacings (GTK_TABLE (table1), 12);
+	gtk_grid_set_row_spacing (GTK_GRID (table1), 12);
+	gtk_grid_set_column_spacing (GTK_GRID (table1), 12);
 
-	image = gtk_image_new_from_stock ("gtk-dialog-warning", GTK_ICON_SIZE_DIALOG);
+	image = gtk_image_new_from_icon_name ("dialog-warning", GTK_ICON_SIZE_DIALOG);
 	gtk_widget_show (image);
-	gtk_table_attach (GTK_TABLE (table1), image, 0, 1, 0, 1,
-							(GtkAttachOptions) (GTK_FILL),
-							(GtkAttachOptions) (GTK_FILL), 0, 0);
+	gtk_grid_attach (GTK_GRID (table1), image, 0, 0, 1, 1);
 
 	checkbutton1 = gtk_check_button_new_with_mnemonic (_("Don't ask next time."));
 	gtk_widget_show (checkbutton1);
-	gtk_table_attach (GTK_TABLE (table1), checkbutton1, 0, 2, 1, 2,
-							(GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
-							(GtkAttachOptions) (0), 0, 4);
+	gtk_widget_set_hexpand (checkbutton1, TRUE);
+	gtk_widget_set_halign (checkbutton1, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table1), checkbutton1, 0, 1, 2, 1);
+	gtk_widget_set_margin_top (checkbutton1, 4);
 
 	connecttext = g_strdup_printf (_("You are connected to %i IRC networks."), cons);
 	text = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s\n%s",
@@ -1217,16 +1217,16 @@ mg_open_quit_dialog (gboolean minimize_button)
 	label = gtk_label_new (text);
 	g_free (text);
 	gtk_widget_show (label);
-	gtk_table_attach (GTK_TABLE (table1), label, 1, 2, 0, 1,
-							(GtkAttachOptions) (GTK_EXPAND | GTK_SHRINK | GTK_FILL),
-							(GtkAttachOptions) (GTK_EXPAND | GTK_SHRINK), 0, 0);
+	gtk_widget_set_hexpand (label, TRUE);
+	gtk_widget_set_vexpand (label, TRUE);
+	gtk_widget_set_halign (label, GTK_ALIGN_FILL);
+	gtk_widget_set_valign (label, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table1), label, 1, 0, 1, 1);
 	gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-	gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
 
-	dialog_action_area1 = gtk_dialog_get_action_area (GTK_DIALOG (dialog));
-	gtk_widget_show (dialog_action_area1);
-	gtk_button_box_set_layout (GTK_BUTTON_BOX (dialog_action_area1),
-										GTK_BUTTONBOX_END);
+	/* No need to access action area directly - buttons are added with gtk_dialog_add_action_widget */
 
 	if (minimize_button && gtkutil_tray_icon_supported (GTK_WINDOW(dialog)))
 	{
@@ -1235,13 +1235,15 @@ mg_open_quit_dialog (gboolean minimize_button)
 		gtk_dialog_add_action_widget (GTK_DIALOG (dialog), button, 1);
 	}
 
-	button = gtk_button_new_from_stock ("gtk-cancel");
+	button = gtk_button_new_with_mnemonic (_("_Cancel"));
+	gtk_button_set_image (GTK_BUTTON (button), gtk_image_new_from_icon_name ("dialog-cancel", GTK_ICON_SIZE_BUTTON));
 	gtk_widget_show (button);
 	gtk_dialog_add_action_widget (GTK_DIALOG (dialog), button,
 											GTK_RESPONSE_CANCEL);
 	gtk_widget_grab_focus (button);
 
-	button = gtk_button_new_from_stock ("gtk-quit");
+	button = gtk_button_new_with_mnemonic (_("_Quit"));
+	gtk_button_set_image (GTK_BUTTON (button), gtk_image_new_from_icon_name ("application-exit", GTK_ICON_SIZE_BUTTON));
 	gtk_widget_show (button);
 	gtk_dialog_add_action_widget (GTK_DIALOG (dialog), button, 0);
 
@@ -1462,7 +1464,7 @@ mg_create_color_menu (GtkWidget *menu, session *sess)
 	{
 		sprintf (buf, "<tt><sup>%02d</sup> <span background=\"#%02x%02x%02x\">"
 					"   </span></tt>",
-				i, colors[i].red >> 8, colors[i].green >> 8, colors[i].blue >> 8);
+				i, (int)(colors[i].red * 255), (int)(colors[i].green * 255), (int)(colors[i].blue * 255));
 		mg_markup_item (subsubmenu, buf, i);
 	}
 
@@ -1472,7 +1474,7 @@ mg_create_color_menu (GtkWidget *menu, session *sess)
 	{
 		sprintf (buf, "<tt><sup>%02d</sup> <span background=\"#%02x%02x%02x\">"
 					"   </span></tt>",
-				i, colors[i].red >> 8, colors[i].green >> 8, colors[i].blue >> 8);
+				i, (int)(colors[i].red * 255), (int)(colors[i].green * 255), (int)(colors[i].blue * 255));
 		mg_markup_item (subsubmenu, buf, i);
 	}
 }
@@ -1592,9 +1594,9 @@ mg_create_tabmenu (session *sess, GdkEventButton *event, chan *ch)
 			menu_addconnectmenu (sess->server, menu);
 	}
 
-	mg_create_icon_item (_("_Detach"), GTK_STOCK_REDO, menu,
+	mg_create_icon_item (_("_Detach"), "edit-redo", menu,
 								mg_detach_tab_cb, ch);
-	mg_create_icon_item (_("_Close"), GTK_STOCK_CLOSE, menu,
+	mg_create_icon_item (_("_Close"), "window-close", menu,
 								mg_destroy_tab_cb, ch);
 	if (sess && tabmenu_list)
 		menu_create (menu, tabmenu_list, sess->channel, FALSE);
@@ -1608,7 +1610,7 @@ mg_create_tabmenu (session *sess, GdkEventButton *event, chan *ch)
 	g_object_unref (menu);
 	g_signal_connect (G_OBJECT (menu), "selection-done",
 							G_CALLBACK (mg_menu_destroy), NULL);
-	gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL, 0, event->time);
+	gtk_menu_popup_at_pointer (GTK_MENU (menu), (GdkEvent*)event);
 }
 
 static gboolean
@@ -1725,7 +1727,9 @@ mg_userlist_button (GtkWidget * box, char *label, char *cmd,
 	GtkWidget *wid = gtk_button_new_with_label (label);
 	g_signal_connect (G_OBJECT (wid), "clicked",
 							G_CALLBACK (userlist_button_cb), cmd);
-	gtk_table_attach_defaults (GTK_TABLE (box), wid, a, b, c, d);
+	gtk_widget_set_hexpand (wid, TRUE);
+	gtk_widget_set_vexpand (wid, TRUE);
+	gtk_grid_attach (GTK_GRID (box), wid, a, c, b - a, d - c);
 	show_and_unfocus (wid);
 }
 
@@ -1737,7 +1741,7 @@ mg_create_userlistbuttons (GtkWidget *box)
 	int a = 0, b = 0;
 	GtkWidget *tab;
 
-	tab = gtk_table_new (5, 2, FALSE);
+	tab = gtk_grid_new ();
 	gtk_box_pack_end (GTK_BOX (box), tab, FALSE, FALSE, 0);
 
 	while (list)
@@ -2061,9 +2065,11 @@ mg_limit_entry_cb (GtkWidget * igad, gpointer userdata)
 static void
 mg_apply_entry_style (GtkWidget *entry)
 {
-	gtk_widget_modify_base (entry, GTK_STATE_NORMAL, &colors[COL_BG]);
-	gtk_widget_modify_text (entry, GTK_STATE_NORMAL, &colors[COL_FG]);
-	gtk_widget_modify_font (entry, input_style->font_desc);
+	/* Temporarily disabled for GTK3 migration - use CSS instead */
+	/* gtk_widget_modify_base (entry, GTK_STATE_NORMAL, &colors[COL_BG]);
+	gtk_widget_modify_text (entry, GTK_STATE_NORMAL, &colors[COL_FG]); */
+	/* Temporarily disabled for GTK3 migration */
+	/* gtk_widget_modify_font (entry, input_style->font_desc); */
 }
 
 static void
@@ -2104,11 +2110,11 @@ mg_create_chanmodebuttons (session_gui *gui, GtkWidget *box)
 /*static void
 mg_create_link_buttons (GtkWidget *box, gpointer userdata)
 {
-	gtkutil_button (box, GTK_STOCK_CLOSE, _("Close this tab/window"),
+	gtkutil_button (box, "window-close", _("Close this tab/window"),
 						 mg_x_click_cb, userdata, 0);
 
 	if (!userdata)
-	gtkutil_button (box, GTK_STOCK_REDO, _("Attach/Detach this tab"),
+	gtkutil_button (box, "edit-redo", _("Attach/Detach this tab"),
 						 mg_link_cb, userdata, 0);
 }*/
 
@@ -2173,7 +2179,7 @@ mg_create_topicbar (session *sess, GtkWidget *box)
 	GtkWidget *hbox, *topic, *bbox;
 	session_gui *gui = sess->gui;
 
-	gui->topic_bar = hbox = gtk_hbox_new (FALSE, 0);
+	gui->topic_bar = hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (box), hbox, 0, 0, 0);
 
 	if (!gui->is_tab)
@@ -2182,18 +2188,18 @@ mg_create_topicbar (session *sess, GtkWidget *box)
 	gui->topic_entry = topic = sexy_spell_entry_new ();
 	gtk_widget_set_name (topic, "hexchat-inputbox");
 	sexy_spell_entry_set_checked (SEXY_SPELL_ENTRY (topic), FALSE);
-	gtk_container_add (GTK_CONTAINER (hbox), topic);
+	gtk_box_pack_start (GTK_BOX (hbox), topic, TRUE, TRUE, 0);
 	g_signal_connect (G_OBJECT (topic), "activate",
 							G_CALLBACK (mg_topic_cb), 0);
 
 	if (prefs.hex_gui_input_style)
 		mg_apply_entry_style (topic);
 
-	gui->topicbutton_box = bbox = gtk_hbox_new (FALSE, 0);
+	gui->topicbutton_box = bbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (hbox), bbox, 0, 0, 0);
 	mg_create_chanmodebuttons (gui, bbox);
 
-	gui->dialogbutton_box = bbox = gtk_hbox_new (FALSE, 0);
+	gui->dialogbutton_box = bbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (hbox), bbox, 0, 0, 0);
 	mg_create_dialogbuttons (bbox);
 }
@@ -2334,14 +2340,14 @@ mg_create_textarea (session *sess, GtkWidget *box)
 		{"HEXCHAT_USERLIST", GTK_TARGET_SAME_APP, 75 }
 	};
 
-	vbox = gtk_vbox_new (FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (box), vbox);
-	inbox = gtk_hbox_new (FALSE, 2);
-	gtk_container_add (GTK_CONTAINER (vbox), inbox);
+	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	gtk_box_pack_start (GTK_BOX (box), vbox, TRUE, TRUE, 0);
+	inbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), inbox, TRUE, TRUE, 0);
 
 	frame = gtk_frame_new (NULL);
-	gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_IN);
-	gtk_container_add (GTK_CONTAINER (inbox), frame);
+	gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_NONE);
+	gtk_box_pack_start (GTK_BOX (inbox), frame, TRUE, TRUE, 0);
 
 	gui->xtext = gtk_xtext_new (colors, TRUE);
 	xtext = GTK_XTEXT (gui->xtext);
@@ -2356,19 +2362,25 @@ mg_create_textarea (session *sess, GtkWidget *box)
 	g_signal_connect (G_OBJECT (xtext), "word_click",
 							G_CALLBACK (mg_word_clicked), NULL);
 
-	gui->vscrollbar = gtk_vscrollbar_new (GTK_XTEXT (xtext)->adj);
-	gtk_box_pack_start (GTK_BOX (inbox), gui->vscrollbar, FALSE, TRUE, 0);
-
-	gtk_drag_dest_set (gui->vscrollbar, 5, dnd_dest_targets, 2,
+	/* GtkScrolledWindow (our new xtext widget) provides its own scrollbar */
+	/* Get the vertical scrollbar from the scrolled window for drag-and-drop compatibility */
+	gui->vscrollbar = gtk_scrolled_window_get_vscrollbar (GTK_SCROLLED_WINDOW (xtext));
+	
+	/* Note: Don't pack the scrollbar since it's already managed by GtkScrolledWindow */
+	
+	/* Setup drag and drop on the scrollbar for compatibility */
+	if (gui->vscrollbar) {
+		gtk_drag_dest_set (gui->vscrollbar, 5, dnd_dest_targets, 2,
 							 GDK_ACTION_MOVE | GDK_ACTION_COPY | GDK_ACTION_LINK);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_begin",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_begin",
 							G_CALLBACK (mg_drag_begin_cb), NULL);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_drop",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_drop",
 							G_CALLBACK (mg_drag_drop_cb), NULL);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_motion",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_motion",
 							G_CALLBACK (mg_drag_motion_cb), gui->vscrollbar);
-	g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_end",
+		g_signal_connect (G_OBJECT (gui->vscrollbar), "drag_end",
 							G_CALLBACK (mg_drag_end_cb), NULL);
+	}
 
 	gtk_drag_dest_set (gui->xtext, GTK_DEST_DEFAULT_ALL, dnd_targets, 1,
 							 GDK_ACTION_MOVE | GDK_ACTION_COPY | GDK_ACTION_LINK);
@@ -2385,7 +2397,7 @@ mg_create_infoframe (GtkWidget *box)
 	gtk_frame_set_shadow_type ((GtkFrame*)frame, GTK_SHADOW_OUT);
 	gtk_container_add (GTK_CONTAINER (box), frame);
 
-	hbox = gtk_hbox_new (0, 0);
+	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_container_add (GTK_CONTAINER (frame), hbox);
 
 	label = gtk_label_new (NULL);
@@ -2399,12 +2411,12 @@ mg_create_meters (session_gui *gui, GtkWidget *parent_box)
 {
 	GtkWidget *infbox, *wid, *box;
 
-	gui->meter_box = infbox = box = gtk_vbox_new (0, 1);
+	gui->meter_box = infbox = box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 1);
 	gtk_box_pack_start (GTK_BOX (parent_box), box, 0, 0, 0);
 
 	if ((prefs.hex_gui_lagometer & 2) || (prefs.hex_gui_throttlemeter & 2))
 	{
-		infbox = gtk_hbox_new (0, 0);
+		infbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		gtk_box_pack_start (GTK_BOX (box), infbox, 0, 0, 0);
 	}
 
@@ -2465,23 +2477,24 @@ mg_create_userlist (session_gui *gui, GtkWidget *box)
 {
 	GtkWidget *frame, *ulist, *vbox;
 
-	vbox = gtk_vbox_new (0, 1);
+	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add (GTK_CONTAINER (box), vbox);
 
 	frame = gtk_frame_new (NULL);
 	if (prefs.hex_gui_ulist_count)
-		gtk_box_pack_start (GTK_BOX (vbox), frame, 0, 0, GUI_SPACING);
+		gtk_box_pack_start (GTK_BOX (vbox), frame, 0, 0, 0);
 
 	gui->namelistinfo = gtk_label_new (NULL);
 	gtk_container_add (GTK_CONTAINER (frame), gui->namelistinfo);
 
 	gui->user_tree = ulist = userlist_create (vbox);
 
-	if (prefs.hex_gui_ulist_style)
+	/* Temporarily disabled for GTK3 migration - use CSS styling instead */
+	/* if (prefs.hex_gui_ulist_style)
 	{
 		gtk_widget_set_style (ulist, input_style);
 		gtk_widget_modify_base (ulist, GTK_STATE_NORMAL, &colors[COL_BG]);
-	}
+	} */
 
 	mg_create_meters (gui, vbox);
 
@@ -2533,17 +2546,21 @@ mg_create_center (session *sess, session_gui *gui, GtkWidget *box)
 	GtkWidget *vbox, *hbox, *book;
 
 	/* sep between top and bottom of left side */
-	gui->vpane_left = gtk_vpaned_new ();
+	gui->vpane_left = gtk_paned_new (GTK_ORIENTATION_VERTICAL);
+	gtk_paned_set_wide_handle (GTK_PANED (gui->vpane_left), FALSE);
 
 	/* sep between top and bottom of right side */
-	gui->vpane_right = gtk_vpaned_new ();
+	gui->vpane_right = gtk_paned_new (GTK_ORIENTATION_VERTICAL);
+	gtk_paned_set_wide_handle (GTK_PANED (gui->vpane_right), FALSE);
 
 	/* sep between left and xtext */
-	gui->hpane_left = gtk_hpaned_new ();
-	gtk_paned_set_position (GTK_PANED (gui->hpane_left), prefs.hex_gui_pane_left_size);
+	gui->hpane_left = gtk_paned_new (GTK_ORIENTATION_HORIZONTAL);
+	/* Set position to match actual channel list content width */
+	gtk_paned_set_wide_handle (GTK_PANED (gui->hpane_left), FALSE);
 
 	/* sep between xtext and right side */
-	gui->hpane_right = gtk_hpaned_new ();
+	gui->hpane_right = gtk_paned_new (GTK_ORIENTATION_HORIZONTAL);
+	gtk_paned_set_wide_handle (GTK_PANED (gui->hpane_right), FALSE);
 
 	if (prefs.hex_gui_win_swap)
 	{
@@ -2558,19 +2575,44 @@ mg_create_center (session *sess, session_gui *gui, GtkWidget *box)
 	gtk_paned_pack2 (GTK_PANED (gui->hpane_right), gui->vpane_right, FALSE, TRUE);
 
 	gtk_container_add (GTK_CONTAINER (box), gui->hpane_left);
+	
+	/* FORCE treeview and scrolledwindow to expand to full width */
+	GtkCssProvider *css_provider = gtk_css_provider_new();
+	const gchar *css_data = 
+		"paned separator { "
+		"  min-width: 1px; "
+		"  min-height: 1px; "
+		"  background: #2e3436; "
+		"  border: none; "
+		"  margin: 0px; "
+		"  padding: 0px; "
+		"} "
+		"scrolledwindow { "
+		"  min-width: 100px; "
+		"} "
+		"treeview { "
+		"  min-width: 100px; "
+		"} "
+		"treeview column { "
+		"  min-width: 100px; "
+		"}";
+	gtk_css_provider_load_from_data(css_provider, css_data, -1, NULL);
+	gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+		GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	g_object_unref(css_provider);
 
 	gui->note_book = book = gtk_notebook_new ();
 	gtk_notebook_set_show_tabs (GTK_NOTEBOOK (book), FALSE);
 	gtk_notebook_set_show_border (GTK_NOTEBOOK (book), FALSE);
 	gtk_paned_pack1 (GTK_PANED (gui->hpane_right), book, TRUE, TRUE);
 
-	hbox = gtk_hbox_new (FALSE, 0);
-	gtk_paned_pack1 (GTK_PANED (gui->vpane_right), hbox, FALSE, TRUE);
+	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_paned_pack1 (GTK_PANED (gui->vpane_right), hbox, TRUE, TRUE);
 	mg_create_userlist (gui, hbox);
 
 	gui->user_box = hbox;
 
-	vbox = gtk_vbox_new (FALSE, 3);
+	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 	gtk_notebook_append_page (GTK_NOTEBOOK (book), vbox, NULL);
 	mg_create_topicbar (sess, vbox);
 
@@ -2660,64 +2702,75 @@ mg_place_userlist_and_chanview_real (session_gui *gui, GtkWidget *userlist, GtkW
 		/* incase the previous pos was POS_HIDDEN */
 		gtk_widget_show (chanview);
 
-		gtk_table_set_row_spacing (GTK_TABLE (gui->main_table), 1, 0);
-		gtk_table_set_row_spacing (GTK_TABLE (gui->main_table), 2, 2);
+		/* Ensure chanview expands to fill available space */
+		gtk_widget_set_hexpand (chanview, TRUE);
+		gtk_widget_set_vexpand (chanview, TRUE);
+
+		gtk_grid_set_row_spacing (GTK_GRID (gui->main_table), 0);
 
 		/* then place them back in their new positions */
 		switch (prefs.hex_gui_tab_pos)
 		{
 		case POS_TOPLEFT:
-			gtk_paned_pack1 (GTK_PANED (gui->vpane_left), chanview, FALSE, TRUE);
+			gtk_paned_pack1 (GTK_PANED (gui->vpane_left), chanview, TRUE, TRUE);
 			break;
 		case POS_BOTTOMLEFT:
-			gtk_paned_pack2 (GTK_PANED (gui->vpane_left), chanview, FALSE, TRUE);
+			gtk_paned_pack2 (GTK_PANED (gui->vpane_left), chanview, TRUE, TRUE);
 			break;
 		case POS_TOPRIGHT:
-			gtk_paned_pack1 (GTK_PANED (gui->vpane_right), chanview, FALSE, TRUE);
+			gtk_paned_pack1 (GTK_PANED (gui->vpane_right), chanview, TRUE, TRUE);
 			break;
 		case POS_BOTTOMRIGHT:
-			gtk_paned_pack2 (GTK_PANED (gui->vpane_right), chanview, FALSE, TRUE);
+			gtk_paned_pack2 (GTK_PANED (gui->vpane_right), chanview, TRUE, TRUE);
 			break;
 		case POS_TOP:
-			gtk_table_set_row_spacing (GTK_TABLE (gui->main_table), 1, GUI_SPACING-1);
-			gtk_table_attach (GTK_TABLE (gui->main_table), chanview,
-									1, 2, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+			gtk_grid_set_row_spacing (GTK_GRID (gui->main_table), 0);
+			gtk_grid_attach (GTK_GRID (gui->main_table), chanview,
+									1, 1, 1, 1);
+			gtk_widget_set_hexpand (chanview, TRUE);
+			gtk_widget_set_vexpand (chanview, TRUE);
 			break;
 		case POS_HIDDEN:
 			gtk_widget_hide (chanview);
 			/* always attach it to something to avoid ref_count=0 */
 			if (prefs.hex_gui_ulist_pos == POS_TOP)
-				gtk_table_attach (GTK_TABLE (gui->main_table), chanview,
-										1, 2, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
+				gtk_grid_attach (GTK_GRID (gui->main_table), chanview,
+										1, 3, 1, 1);
 
 			else
-				gtk_table_attach (GTK_TABLE (gui->main_table), chanview,
-										1, 2, 1, 2, GTK_FILL, GTK_FILL, 0, 0);
+				gtk_grid_attach (GTK_GRID (gui->main_table), chanview,
+										1, 1, 1, 1);
 			break;
 		default:/* POS_BOTTOM */
-			gtk_table_set_row_spacing (GTK_TABLE (gui->main_table), 2, 3);
-			gtk_table_attach (GTK_TABLE (gui->main_table), chanview,
-									1, 2, 3, 4, GTK_FILL, GTK_FILL, 0, 0);
+			gtk_grid_set_row_spacing (GTK_GRID (gui->main_table), 0);
+			gtk_grid_attach (GTK_GRID (gui->main_table), chanview,
+									1, 3, 1, 1);
+			gtk_widget_set_hexpand (chanview, TRUE);
+			gtk_widget_set_vexpand (chanview, TRUE);
 		}
 	}
 
 	if (userlist)
 	{
+		/* Ensure userlist expands to fill available space */
+		gtk_widget_set_hexpand (userlist, TRUE);
+		gtk_widget_set_vexpand (userlist, TRUE);
+
 		switch (prefs.hex_gui_ulist_pos)
 		{
 		case POS_TOPLEFT:
-			gtk_paned_pack1 (GTK_PANED (gui->vpane_left), userlist, FALSE, TRUE);
+			gtk_paned_pack1 (GTK_PANED (gui->vpane_left), userlist, TRUE, TRUE);
 			break;
 		case POS_BOTTOMLEFT:
-			gtk_paned_pack2 (GTK_PANED (gui->vpane_left), userlist, FALSE, TRUE);
+			gtk_paned_pack2 (GTK_PANED (gui->vpane_left), userlist, TRUE, TRUE);
 			break;
 		case POS_BOTTOMRIGHT:
-			gtk_paned_pack2 (GTK_PANED (gui->vpane_right), userlist, FALSE, TRUE);
+			gtk_paned_pack2 (GTK_PANED (gui->vpane_right), userlist, TRUE, TRUE);
 			break;
 		/*case POS_HIDDEN:
 			break;*/	/* Hide using the VIEW menu instead */
 		default:/* POS_TOPRIGHT */
-			gtk_paned_pack1 (GTK_PANED (gui->vpane_right), userlist, FALSE, TRUE);
+			gtk_paned_pack1 (GTK_PANED (gui->vpane_right), userlist, TRUE, TRUE);
 		}
 	}
 
@@ -2754,6 +2807,9 @@ mg_place_userlist_and_chanview (session_gui *gui)
 		else if ((pos == POS_TOPLEFT || pos == POS_BOTTOMLEFT || pos == POS_TOPRIGHT || pos == POS_BOTTOMRIGHT) && orientation == GTK_ORIENTATION_HORIZONTAL)
 			chanview_set_orientation (gui->chanview, TRUE);
 		chanviewbox = chanview_get_box (gui->chanview);
+		/* Force chanview box to expand to full width */
+		gtk_widget_set_hexpand (chanviewbox, TRUE);
+		gtk_widget_set_halign (chanviewbox, GTK_ALIGN_FILL);
 	}
 
 	mg_place_userlist_and_chanview_real (gui, gui->user_box, chanviewbox);
@@ -2811,7 +2867,7 @@ search_handle_event(int search_type, session *sess)
 
 	if (err)
 	{
-		gtk_entry_set_icon_from_stock (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_DIALOG_ERROR);
+		gtk_entry_set_icon_from_icon_name (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, "dialog-error");
 		gtk_entry_set_icon_tooltip_text (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, _(err->message));
 		g_error_free (err);
 	}
@@ -2819,7 +2875,7 @@ search_handle_event(int search_type, session *sess)
 	{
 		if (text && text[0] == 0) /* empty string, no error */
 		{
-			gtk_entry_set_icon_from_stock (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, NULL);
+			gtk_entry_set_icon_from_icon_name (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, NULL);
 		}
 		else
 		{
@@ -2827,14 +2883,14 @@ search_handle_event(int search_type, session *sess)
 			last = gtk_xtext_search (GTK_XTEXT (sess->gui->xtext), text, flags, &err);
 			if (!last) /* Not found error */
 			{
-				gtk_entry_set_icon_from_stock (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_DIALOG_ERROR);
+				gtk_entry_set_icon_from_icon_name (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, "dialog-error");
 				gtk_entry_set_icon_tooltip_text (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, _("No results found."));
 			}
 		}
 	}
 	else
 	{
-		gtk_entry_set_icon_from_stock (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, NULL);
+		gtk_entry_set_icon_from_icon_name (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, NULL);
 	}
 }
 
@@ -2881,7 +2937,7 @@ mg_search_toggle(session *sess)
 	else
 	{
 		/* Reset search state */
-		gtk_entry_set_icon_from_stock (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, NULL);
+		gtk_entry_set_icon_from_icon_name (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, NULL);
 
 		/* Show and focus */
 		gtk_widget_show(sess->gui->shbox);
@@ -2904,11 +2960,11 @@ mg_create_search(session *sess, GtkWidget *box)
 	GtkWidget *entry, *label, *next, *previous, *highlight, *matchcase, *regex, *close;
 	session_gui *gui = sess->gui;
 
-	gui->shbox = gtk_hbox_new(FALSE, 5);
+	gui->shbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 5);
 	gtk_box_pack_start(GTK_BOX(box), gui->shbox, FALSE, FALSE, 0);
 
 	close = gtk_button_new ();
-	gtk_button_set_image (GTK_BUTTON (close), gtk_image_new_from_stock (GTK_STOCK_CLOSE, GTK_ICON_SIZE_MENU));
+	gtk_button_set_image (GTK_BUTTON (close), gtk_image_new_from_icon_name ("window-close", GTK_ICON_SIZE_MENU));
 	gtk_button_set_relief(GTK_BUTTON(close), GTK_RELIEF_NONE);
 	gtk_widget_set_can_focus (close, FALSE);
 	gtk_box_pack_start(GTK_BOX(gui->shbox), close, FALSE, FALSE, 0);
@@ -2927,14 +2983,14 @@ mg_create_search(session *sess, GtkWidget *box)
 	gtk_entry_set_icon_tooltip_text (GTK_ENTRY (sess->gui->shentry), GTK_ENTRY_ICON_SECONDARY, _("Search hit end or not found."));
 
 	previous = gtk_button_new ();
-	gtk_button_set_image (GTK_BUTTON (previous), gtk_image_new_from_stock (GTK_STOCK_GO_BACK, GTK_ICON_SIZE_MENU));
+	gtk_button_set_image (GTK_BUTTON (previous), gtk_image_new_from_icon_name ("go-previous", GTK_ICON_SIZE_MENU));
 	gtk_button_set_relief(GTK_BUTTON(previous), GTK_RELIEF_NONE);
 	gtk_widget_set_can_focus (previous, FALSE);
 	gtk_box_pack_start(GTK_BOX(gui->shbox), previous, FALSE, FALSE, 0);
 	g_signal_connect(G_OBJECT(previous), "clicked", G_CALLBACK(mg_search_handle_previous), sess);
 
 	next = gtk_button_new ();
-	gtk_button_set_image (GTK_BUTTON (next), gtk_image_new_from_stock (GTK_STOCK_GO_FORWARD, GTK_ICON_SIZE_MENU));
+	gtk_button_set_image (GTK_BUTTON (next), gtk_image_new_from_icon_name ("go-next", GTK_ICON_SIZE_MENU));
 	gtk_button_set_relief(GTK_BUTTON(next), GTK_RELIEF_NONE);
 	gtk_widget_set_can_focus (next, FALSE);
 	gtk_box_pack_start(GTK_BOX(gui->shbox), next, FALSE, FALSE, 0);
@@ -2969,10 +3025,10 @@ mg_create_entry (session *sess, GtkWidget *box)
 	GtkWidget *hbox, *but, *entry;
 	session_gui *gui = sess->gui;
 
-	hbox = gtk_hbox_new (FALSE, 0);
+	hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (box), hbox, 0, 0, 0);
 
-	gui->nick_box = gtk_hbox_new (FALSE, 0);
+	gui->nick_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (hbox), gui->nick_box, 0, 0, 0);
 
 	gui->nick_label = but = gtk_button_new_with_label (sess->server->nick);
@@ -2989,7 +3045,7 @@ mg_create_entry (session *sess, GtkWidget *box)
 	gtk_entry_set_max_length (GTK_ENTRY (gui->input_box), 0);
 	g_signal_connect (G_OBJECT (entry), "activate",
 							G_CALLBACK (mg_inputbox_cb), gui);
-	gtk_container_add (GTK_CONTAINER (hbox), entry);
+	gtk_box_pack_start (GTK_BOX (hbox), entry, TRUE, TRUE, 0);
 
 	gtk_widget_set_name (entry, "hexchat-inputbox");
 	g_signal_connect (G_OBJECT (entry), "key_press_event",
@@ -3107,8 +3163,9 @@ mg_create_menu (session_gui *gui, GtkWidget *table, int away_state)
 
 	gui->menu = menu_create_main (accel_group, TRUE, away_state, !gui->is_tab,
 											gui->menu_item);
-	gtk_table_attach (GTK_TABLE (table), gui->menu, 0, 3, 0, 1,
-						   GTK_EXPAND | GTK_FILL, GTK_SHRINK | GTK_FILL, 0, 0);
+	gtk_widget_set_hexpand (gui->menu, TRUE);
+	gtk_widget_set_halign (gui->menu, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table), gui->menu, 0, 0, 3, 1);
 }
 
 static void
@@ -3117,9 +3174,12 @@ mg_create_irctab (session *sess, GtkWidget *table)
 	GtkWidget *vbox;
 	session_gui *gui = sess->gui;
 
-	vbox = gtk_vbox_new (FALSE, 0);
-	gtk_table_attach (GTK_TABLE (table), vbox, 1, 2, 2, 3,
-						   GTK_EXPAND | GTK_FILL, GTK_EXPAND | GTK_FILL, 0, 0);
+	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	gtk_widget_set_hexpand (vbox, TRUE);
+	gtk_widget_set_vexpand (vbox, TRUE);
+	gtk_widget_set_halign (vbox, GTK_ALIGN_FILL);
+	gtk_widget_set_valign (vbox, GTK_ALIGN_FILL);
+	gtk_grid_attach (GTK_GRID (table), vbox, 1, 2, 1, 1);
 	mg_create_center (sess, gui, vbox);
 }
 
@@ -3138,7 +3198,7 @@ mg_create_topwindow (session *sess)
 										  prefs.hex_gui_win_height, 0);
 	sess->gui->window = win;
 	gtk_container_set_border_width (GTK_CONTAINER (win), GUI_BORDER);
-	gtk_window_set_opacity (GTK_WINDOW (win), (prefs.hex_gui_transparency / 255.));
+	gtk_widget_set_opacity (win, (prefs.hex_gui_transparency / 255.));
 
 	g_signal_connect (G_OBJECT (win), "focus_in_event",
 							G_CALLBACK (mg_topwin_focus_cb), sess);
@@ -3149,12 +3209,11 @@ mg_create_topwindow (session *sess)
 
 	palette_alloc (win);
 
-	table = gtk_table_new (4, 3, FALSE);
+	table = gtk_grid_new ();
 	/* spacing under the menubar */
-	gtk_table_set_row_spacing (GTK_TABLE (table), 0, GUI_SPACING);
+	gtk_grid_set_row_spacing (GTK_GRID (table), GUI_SPACING);
 	/* left and right borders */
-	gtk_table_set_col_spacing (GTK_TABLE (table), 0, 1);
-	gtk_table_set_col_spacing (GTK_TABLE (table), 1, 1);
+	gtk_grid_set_column_spacing (GTK_GRID (table), 0);
 	gtk_container_add (GTK_CONTAINER (win), table);
 
 	mg_create_irctab (sess, table);
@@ -3262,7 +3321,7 @@ mg_create_tabwindow (session *sess)
 		gtk_window_maximize (GTK_WINDOW (win));
 	if (prefs.hex_gui_win_fullscreen)
 		gtk_window_fullscreen (GTK_WINDOW (win));
-	gtk_window_set_opacity (GTK_WINDOW (win), (prefs.hex_gui_transparency / 255.));
+	gtk_widget_set_opacity (win, (prefs.hex_gui_transparency / 255.));
 	gtk_container_set_border_width (GTK_CONTAINER (win), GUI_BORDER);
 
 	g_signal_connect (G_OBJECT (win), "delete_event",
@@ -3278,12 +3337,14 @@ mg_create_tabwindow (session *sess)
 
 	palette_alloc (win);
 
-	sess->gui->main_table = table = gtk_table_new (4, 3, FALSE);
+	sess->gui->main_table = table = gtk_grid_new ();
 	/* spacing under the menubar */
-	gtk_table_set_row_spacing (GTK_TABLE (table), 0, GUI_SPACING);
-	/* left and right borders */
-	gtk_table_set_col_spacing (GTK_TABLE (table), 0, 1);
-	gtk_table_set_col_spacing (GTK_TABLE (table), 1, 1);
+	gtk_grid_set_row_spacing (GTK_GRID (table), GUI_SPACING);
+	/* Remove column spacing to eliminate gaps */
+	gtk_grid_set_column_spacing (GTK_GRID (table), 0);
+	/* Enable expansion for the grid itself */
+	gtk_widget_set_hexpand (table, TRUE);
+	gtk_widget_set_vexpand (table, TRUE);
 	gtk_container_add (GTK_CONTAINER (win), table);
 
 	mg_create_irctab (sess, table);
@@ -3438,7 +3499,7 @@ fe_dlgbuttons_update (session *sess)
 
 	gtk_widget_destroy (gui->dialogbutton_box);
 
-	gui->dialogbutton_box = box = gtk_hbox_new (0, 0);
+	gui->dialogbutton_box = box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 	gtk_box_pack_start (GTK_BOX (gui->topic_bar), box, 0, 0, 0);
 	gtk_box_reorder_child (GTK_BOX (gui->topic_bar), box, 3);
 	mg_create_dialogbuttons (box);
@@ -3591,7 +3652,7 @@ mg_create_generic_tab (char *name, char *title, int force_toplevel,
 	if (force_toplevel || !prefs.hex_gui_tab_utils)
 	{
 		win = gtkutil_window_new (title, name, width, height, 2);
-		vbox = gtk_vbox_new (0, 0);
+		vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 		*vbox_ret = vbox;
 		gtk_container_add (GTK_CONTAINER (win), vbox);
 		gtk_widget_show (vbox);
@@ -3601,7 +3662,7 @@ mg_create_generic_tab (char *name, char *title, int force_toplevel,
 		return win;
 	}
 
-	vbox = gtk_vbox_new (0, 2);
+	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 2);
 	g_object_set_data (G_OBJECT (vbox), "w", GINT_TO_POINTER (width));
 	g_object_set_data (G_OBJECT (vbox), "h", GINT_TO_POINTER (height));
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 3);
@@ -3615,7 +3676,7 @@ mg_create_generic_tab (char *name, char *title, int force_toplevel,
 
 /*	if (link_buttons)
 	{
-		hbox = gtk_hbox_new (FALSE, 0);
+		hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), hbox, 0, 0, 0);
 		mg_create_link_buttons (hbox, ch);
 		gtk_widget_show (hbox);
@@ -3785,18 +3846,25 @@ gboolean
 mg_drag_begin_cb (GtkWidget *widget, GdkDragContext *context, gpointer userdata)
 {
 	int width, height;
-	GdkColormap *cmap;
 	GdkPixbuf *pix, *pix2;
+	cairo_surface_t *surface;
+	cairo_t *cr;
 
 	/* ignore file drops */
 	if (!mg_is_gui_target (context))
 		return FALSE;
 
-	cmap = gtk_widget_get_colormap (widget);
 	width = gdk_window_get_width (gtk_widget_get_window (widget));
 	height = gdk_window_get_height (gtk_widget_get_window (widget));
 
-	pix = gdk_pixbuf_get_from_drawable (NULL, gtk_widget_get_window (widget), cmap, 0, 0, 0, 0, width, height);
+	/* GTK3: Use cairo surface instead of deprecated drawable API */
+	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, width, height);
+	cr = cairo_create (surface);
+	gdk_cairo_set_source_window (cr, gtk_widget_get_window (widget), 0, 0);
+	cairo_paint (cr);
+	cairo_destroy (cr);
+	pix = gdk_pixbuf_get_from_surface (surface, 0, 0, width, height);
+	cairo_surface_destroy (surface);
 	pix2 = gdk_pixbuf_scale_simple (pix, width * 4 / 5, height / 2, GDK_INTERP_HYPER);
 	g_object_unref (pix);
 
@@ -3847,16 +3915,19 @@ mg_drag_drop_cb (GtkWidget *widget, GdkDragContext *context, int x, int y, guint
 gboolean
 mg_drag_motion_cb (GtkWidget *widget, GdkDragContext *context, int x, int y, guint time, gpointer scbar)
 {
-	GdkGC *gc;
-	GdkColor col;
-	GdkGCValues val;
+	cairo_t *cr;
+	GdkRGBA color;
 	int half, width, height;
 	int ox, oy;
-	GdkDrawable *draw;
+	GdkWindow *window;
 	GtkAllocation allocation;
 
 	/* ignore file drops */
 	if (!mg_is_gui_target (context))
+		return FALSE;
+
+	window = gtk_widget_get_window (widget);
+	if (!window)
 		return FALSE;
 
 	if (scbar)	/* scrollbar */
@@ -3866,55 +3937,47 @@ mg_drag_motion_cb (GtkWidget *widget, GdkDragContext *context, int x, int y, gui
 		oy = allocation.y;
 		width = allocation.width;
 		height = allocation.height;
-		draw = gtk_widget_get_window (widget);
 	}
 	else
 	{
 		ox = oy = 0;
-		width = gdk_window_get_width (gtk_widget_get_window (widget));
-		height = gdk_window_get_height (gtk_widget_get_window (widget));
-		draw = gtk_widget_get_window (widget);
+		width = gdk_window_get_width (window);
+		height = gdk_window_get_height (window);
 	}
 
-	val.subwindow_mode = GDK_INCLUDE_INFERIORS;
-	val.graphics_exposures = 0;
-	val.function = GDK_XOR;
+	cr = gdk_cairo_create (window);
+	if (!cr)
+		return FALSE;
 
-	gc = gdk_gc_new_with_values (gtk_widget_get_window (widget), &val, GDK_GC_EXPOSURES | GDK_GC_SUBWINDOW | GDK_GC_FUNCTION);
-	col.red = rand() % 0xffff;
-	col.green = rand() % 0xffff;
-	col.blue = rand() % 0xffff;
-	gdk_colormap_alloc_color (gtk_widget_get_colormap (widget), &col, FALSE, TRUE);
-	gdk_gc_set_foreground (gc, &col);
+	/* Set random color for highlight */
+	color.red = (rand() % 0xffff) / 65535.0;
+	color.green = (rand() % 0xffff) / 65535.0;
+	color.blue = (rand() % 0xffff) / 65535.0;
+	color.alpha = 0.7;
+
+	gdk_cairo_set_source_rgba (cr, &color);
+	cairo_set_line_width (cr, 1.0);
 
 	half = height / 2;
 
-#if 0
-	/* are both tree/userlist on the same side? */
-	paned = (GtkPaned *)widget->parent->parent;
-	if (paned->child1 != NULL && paned->child2 != NULL)
-	{
-		gdk_draw_rectangle (draw, gc, 0, 1, 2, width - 3, height - 4);
-		gdk_draw_rectangle (draw, gc, 0, 0, 1, width - 1, height - 2);
-		g_object_unref (gc);
-		return TRUE;
-	}
-#endif
-
 	if (y < half)
 	{
-		gdk_draw_rectangle (draw, gc, FALSE, 1 + ox, 2 + oy, width - 3, half - 4);
-		gdk_draw_rectangle (draw, gc, FALSE, 0 + ox, 1 + oy, width - 1, half - 2);
+		cairo_rectangle (cr, 1 + ox, 2 + oy, width - 3, half - 4);
+		cairo_stroke (cr);
+		cairo_rectangle (cr, 0 + ox, 1 + oy, width - 1, half - 2);
+		cairo_stroke (cr);
 		gtk_widget_queue_draw_area (widget, ox, half + oy, width, height - half);
 	}
 	else
 	{
-		gdk_draw_rectangle (draw, gc, FALSE, 0 + ox, half + 1 + oy, width - 1, half - 2);
-		gdk_draw_rectangle (draw, gc, FALSE, 1 + ox, half + 2 + oy, width - 3, half - 4);
+		cairo_rectangle (cr, 0 + ox, half + 1 + oy, width - 1, half - 2);
+		cairo_stroke (cr);
+		cairo_rectangle (cr, 1 + ox, half + 2 + oy, width - 3, half - 4);
+		cairo_stroke (cr);
 		gtk_widget_queue_draw_area (widget, ox, oy, width, half);
 	}
 
-	g_object_unref (gc);
+	cairo_destroy (cr);
 
 	return TRUE;
 }

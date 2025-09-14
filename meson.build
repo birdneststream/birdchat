@@ -1,5 +1,5 @@
 project('hexchat', 'c',
-  version: '2.16.2',
+  version: '3.0.0',
   meson_version: '>= 0.47.0',
   default_options: [
     'c_std=gnu89',
@@ -31,7 +31,7 @@ endif
 config_h = configuration_data()
 config_h.set_quoted('PACKAGE_VERSION', meson.project_version())
 config_h.set_quoted('PACKAGE_NAME', meson.project_name())
-config_h.set_quoted('GETTEXT_PACKAGE', 'hexchat')
+config_h.set_quoted('GETTEXT_PACKAGE', 'birdchat')
 config_h.set_quoted('LOCALEDIR', join_paths(get_option('prefix'),
                                  get_option('datadir'), 'locale'))
 config_h.set_quoted('G_LOG_DOMAIN', 'hexchat')
@@ -110,6 +110,9 @@ test_cflags = [
   ['-Werror=format-security', '-Werror=format=1'],
   '-Werror=missing-include-dirs',
   '-Werror=date-time',
+  '-DGDK_DISABLE_DEPRECATED',
+  '-DGTK_DISABLE_DEPRECATED',
+  '-Wdeprecated-declarations',
 ]
 foreach cflag : test_cflags
   if cc.has_multi_arguments(cflag)
@@ -162,12 +165,19 @@ if get_option('plugin')
   subdir('plugins')
 endif
 if cc.get_id() != 'msvc'
-  subdir('data')
-  subdir('po') # FIXME: build xgettext
-
-  meson.add_install_script('meson_post_install.py',
-    '@0@'.format(get_option('theme-manager'))
-  )
+  # Detect DragonFly BSD cross-compilation and disable problematic features
+  is_dragonfly_cross = meson.is_cross_build() and host_machine.system() == 'dragonfly'
+  
+  if not is_dragonfly_cross
+    subdir('data')
+    subdir('po') # FIXME: build xgettext
+    
+    meson.add_install_script('meson_post_install.py',
+      '@0@'.format(get_option('theme-manager'))
+    )
+  else
+    message('Skipping data, po, and post-install for DragonFly BSD cross-compilation')
+  endif
 endif
 
 if meson.version().version_compare('>= 0.53.0')
