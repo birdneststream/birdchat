@@ -20,7 +20,9 @@
 #ifndef HEXCHAT_MAINGUI_H
 #define HEXCHAT_MAINGUI_H
 
-extern GtkStyle *input_style;
+extern GtkCssProvider *input_style;
+extern PangoFontDescription *input_font;
+
 extern GtkWidget *parent_window;
 
 void mg_changui_new (session *sess, restore_gui *res, int tab, int focus);

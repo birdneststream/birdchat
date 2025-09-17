@@ -44,7 +44,7 @@
 #endif
 #include "sexy-spell-entry.h"
 
-GtkStyle *create_input_style (GtkStyle *);
+GtkCssProvider *create_input_style (GtkCssProvider *);
 
 #define LABEL_INDENT 12
 
@@ -2039,8 +2039,7 @@ setup_apply_entry_style (GtkWidget *entry)
 	/* Temporarily disabled for GTK3 migration - use CSS instead */
 	/* gtk_widget_modify_base (entry, GTK_STATE_NORMAL, &colors[COL_BG]);
 	gtk_widget_modify_text (entry, GTK_STATE_NORMAL, &colors[COL_FG]); */
-	/* Temporarily disabled for GTK3 migration */
-	/* gtk_widget_modify_font (entry, input_style->font_desc); */
+	gtk_widget_override_font (entry, input_font);		
 }
 
 static void
@@ -2048,9 +2047,10 @@ setup_apply_to_sess (session_gui *gui)
 {
 	mg_update_xtext (gui->xtext);
 
-	/* Temporarily disabled for GTK3 migration - use CSS styling instead */
-	/* if (prefs.hex_gui_ulist_style)
-		gtk_widget_set_style (gui->user_tree, input_style); */
+	if (prefs.hex_gui_ulist_style) {
+		gtk_style_context_add_provider (gtk_widget_get_style_context(gui->user_tree), GTK_STYLE_PROVIDER(input_style), GTK_STYLE_PROVIDER_PRIORITY_USER);
+		gtk_widget_override_font (gui->user_tree, input_font);
+	}
 
 	if (prefs.hex_gui_input_style)
 	{

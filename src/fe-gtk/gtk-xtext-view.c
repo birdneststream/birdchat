@@ -314,7 +314,9 @@ gtk_xtext_view_handle_user_scroll (GtkXTextView *xtext)
 		return;
 
 	/* Update auto-scroll flag based on current position */
-	xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
+	//FIXME: below crashes when using mousewheel, for now always returns false
+	xtext->buffer->auto_scroll = FALSE;
+	//xtext->buffer->auto_scroll = gtk_xtext_view_is_at_bottom(xtext);
 }
 
 static gboolean
@@ -368,6 +370,9 @@ xtext_buffer_new_internal (GtkXTextView *xtext)
 static void
 xtext_buffer_free_internal (XTextBuffer *buf)
 {
+	//FIXME: crashes when quitting through birdchat>quit
+	return;
+
 	if (!buf) return;
 
 	/* Free search data */

@@ -207,8 +207,8 @@ gtkutil_file_req (GtkWindow *parent, const char *title, void *callback, void *us
 	{
 		dialog = gtk_file_chooser_dialog_new (title, NULL,
 												GTK_FILE_CHOOSER_ACTION_SAVE,
-												"dialog-cancel", GTK_RESPONSE_CANCEL,
-												"document-save", GTK_RESPONSE_ACCEPT,
+												"gtk-cancel", GTK_RESPONSE_CANCEL,
+												"gtk-save", GTK_RESPONSE_ACCEPT,
 												NULL);
 
 		if (!(flags & FRF_NOASKOVERWRITE))
@@ -217,8 +217,8 @@ gtkutil_file_req (GtkWindow *parent, const char *title, void *callback, void *us
 	else
 		dialog = gtk_file_chooser_dialog_new (title, NULL,
 												GTK_FILE_CHOOSER_ACTION_OPEN,
-												"dialog-cancel", GTK_RESPONSE_CANCEL,
-												"dialog-ok", GTK_RESPONSE_ACCEPT,
+												"gtk-cancel", GTK_RESPONSE_CANCEL,
+												"gtk-ok", GTK_RESPONSE_ACCEPT,
 												NULL);
 
 	if (filter && filter[0] && (flags & FRF_FILTERISINITIAL))
@@ -359,8 +359,8 @@ fe_get_str (char *msg, char *def, void *callback, void *userdata)
 	extern GtkWidget *parent_window;
 
 	dialog = gtk_dialog_new_with_buttons (msg, NULL, 0,
-										"dialog-cancel", GTK_RESPONSE_REJECT,
-										"dialog-ok", GTK_RESPONSE_ACCEPT,
+										"gtk-cancel", GTK_RESPONSE_REJECT,
+										"gtk-ok", GTK_RESPONSE_ACCEPT,
 										NULL);
 
 	gtk_window_set_transient_for (GTK_WINDOW (dialog), GTK_WINDOW (parent_window));
@@ -455,8 +455,8 @@ fe_get_int (char *msg, int def, void *callback, void *userdata)
 	extern GtkWidget *parent_window;
 
 	dialog = gtk_dialog_new_with_buttons (msg, NULL, 0,
-										"dialog-cancel", GTK_RESPONSE_REJECT,
-										"dialog-ok", GTK_RESPONSE_ACCEPT,
+										"gtk-cancel", GTK_RESPONSE_REJECT,
+										"gtk-ok", GTK_RESPONSE_ACCEPT,
 										NULL);
 	gtk_box_set_homogeneous (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), TRUE);
 	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_MOUSE);
@@ -496,8 +496,8 @@ fe_get_bool (char *title, char *prompt, void *callback, void *userdata)
 	extern GtkWidget *parent_window;
 
 	dialog = gtk_dialog_new_with_buttons (title, NULL, 0,
-		"dialog-no", GTK_RESPONSE_REJECT,
-		"dialog-yes", GTK_RESPONSE_ACCEPT,
+		"gtk-no", GTK_RESPONSE_REJECT,
+		"gtk-yes", GTK_RESPONSE_ACCEPT,
 		NULL);
 	gtk_box_set_homogeneous (GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), TRUE);
 	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_MOUSE);
