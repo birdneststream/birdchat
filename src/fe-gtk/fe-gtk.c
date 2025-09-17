@@ -247,12 +247,16 @@ fe_args (int argc, char *argv[])
 	return -1;
 }
 
-const char cursor_color_rc[] =
-	"style \"xc-ib-st\""
+const char css[] =
+	"#hexchat-inputbox"
 	"{"
-		"GtkEntry::cursor-color=\"#%02x%02x%02x\""
+		"caret-color: #%02x%02x%02x;"
 	"}"
-	"widget \"*.hexchat-inputbox\" style : application \"xc-ib-st\"";
+	""
+	"*:not(:hover):not(:selected) {"
+		"background: #%02x%02x%02x;"
+		"color: #%02x%02x%02x;"
+	"}";
 
 static const char adwaita_workaround_rc[] =
 	"style \"hexchat-input-workaround\""
@@ -270,30 +274,29 @@ static const char adwaita_workaround_rc[] =
 	"}"
 	"widget \"*.hexchat-inputbox\" style \"hexchat-input-workaround\"";
 
-/* Temporarily disabled for GTK3 migration - will be replaced with CSS theming */
-#if 0
-GtkStyle *
-create_input_style (GtkStyle *style)
+GtkCssProvider *
+create_input_style (GtkCssProvider *style)
 {
 	char buf[256];
-	static int done_rc = FALSE;
+	static int done_css = FALSE;
 
-	pango_font_description_free (style->font_desc);
-	style->font_desc = pango_font_description_from_string (prefs.hex_text_font);
+	pango_font_description_free (input_font);
+	input_font = pango_font_description_from_string (prefs.hex_text_font);
 
 	/* fall back */
-	if (pango_font_description_get_size (style->font_desc) == 0)
+	if (pango_font_description_get_size (input_font) == 0)
 	{
 		g_snprintf (buf, sizeof (buf), _("Failed to open font:\n\n%s"), prefs.hex_text_font);
 		fe_message (buf, FE_MSG_ERROR);
-		pango_font_description_free (style->font_desc);
-		style->font_desc = pango_font_description_from_string ("sans 11");
+		pango_font_description_free (input_font);
+		input_font = pango_font_description_from_string ("sans 11");
 	}
 
-	if (prefs.hex_gui_input_style && !done_rc)
+	if (prefs.hex_gui_input_style && !done_css)
 	{
-		GtkSettings *settings = gtk_settings_get_default ();
-		char *theme_name;
+		//FIXME: GTK3
+		/*GtkSettings *settings = gtk_settings_get_default ();
+		char *theme_name;*/
 
 		/* gnome-themes-standard 3.20+ relies on images to do theming
 		 * so we have to override that. */
@@ -303,19 +306,22 @@ create_input_style (GtkStyle *style)
 			gtk_rc_parse_string (adwaita_workaround_rc);
 		g_free (theme_name); */
 
-		done_rc = TRUE;
-		/* sprintf (buf, cursor_color_rc, (int)(colors[COL_FG].red * 255),
-			(int)(colors[COL_FG].green * 255), (int)(colors[COL_FG].blue * 255));
-		gtk_rc_parse_string (buf); */
+		done_css = TRUE;
+		sprintf (buf, css, (int)(colors[COL_FG].red * 255),
+			(int)(colors[COL_FG].green * 255), (int)(colors[COL_FG].blue * 255),
+			(int)(colors[COL_BG].red * 255), (int)(colors[COL_BG].green * 255),
+			(int)(colors[COL_BG].blue * 255), (int)(colors[COL_FG].red * 255),
+			(int)(colors[COL_FG].green * 255),
+			(int)(colors[COL_FG].blue * 255));
+		gtk_css_provider_load_from_data (style, buf, -1, NULL);
 	}
 
-	style->bg[GTK_STATE_NORMAL] = colors[COL_FG];
+	/*style->bg[GTK_STATE_NORMAL] = colors[COL_FG];
 	style->base[GTK_STATE_NORMAL] = colors[COL_BG];
-	style->text[GTK_STATE_NORMAL] = colors[COL_FG];
+	style->text[GTK_STATE_NORMAL] = colors[COL_FG];*/
 
 	return style;
 }
-#endif
 
 void
 fe_init (void)
@@ -329,8 +335,7 @@ fe_init (void)
 #endif
 	/* Temporarily disabled for GTK3 migration */
 	channelwin_pix = NULL; /* pixmap_load_from_file (prefs.hex_text_background); */
-	/* Temporarily disabled for GTK3 migration */
-	input_style = NULL; /* create_input_style (gtk_style_new ()); */
+	input_style = create_input_style (gtk_css_provider_new ());
 }
 
 #ifdef HAVE_GTK_MAC

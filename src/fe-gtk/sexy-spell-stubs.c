@@ -90,8 +90,3 @@ void sexy_spell_entry_activate_default_languages(GtkWidget *entry)
 	/* GTK3: Stub - language activation disabled */
 	(void)entry;
 }
-
-void create_input_style(void)
-{
-	/* GTK3: Stub - CSS styling handled elsewhere */
-}

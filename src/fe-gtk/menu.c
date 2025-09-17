@@ -269,7 +269,7 @@ menu_quick_item (char *cmd, char *label, GtkWidget * menu, int flags,
 	char *path;
 
 	if (!label)
-		item = gtk_menu_item_new ();
+		item = gtk_separator_menu_item_new ();
 	else
 	{
 		if (icon)
@@ -307,14 +307,21 @@ menu_quick_item (char *cmd, char *label, GtkWidget * menu, int flags,
 				else
 					label_widget = gtk_label_new (label);
 			}
-			
+
+			gtk_label_set_use_underline (GTK_LABEL (label_widget), TRUE);
+
 			gtk_label_set_xalign (GTK_LABEL (label_widget), 0.0);
 			gtk_label_set_yalign (GTK_LABEL (label_widget), 0.5);
 			
 			if (img)
 				gtk_box_pack_start (GTK_BOX (box), img, FALSE, FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (box), label_widget, TRUE, TRUE, 0);
-			
+
+			GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(box));
+			GtkCssProvider *provider = gtk_css_provider_new();
+			gtk_css_provider_load_from_data(provider, "box{margin-left:-22px}", -1, NULL);
+			gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), 999);
+
 			gtk_container_add (GTK_CONTAINER (item), box);
 		}
 		else
@@ -500,6 +507,7 @@ menu_create (GtkWidget *menu, GSList *list, char *target, int check_path)
 	struct popup *pop;
 	GtkWidget *tempmenu = menu, *subitem = NULL;
 	int childcount = 0;
+	gtk_widget_set_vexpand(menu, TRUE);
 
 	submenu_list = g_slist_prepend (0, menu);
 	while (list)
@@ -707,6 +715,8 @@ menu_create_nickinfo_menu (struct User *user, GtkWidget *submenu)
 			g_signal_connect (G_OBJECT (item), "activate",
 									G_CALLBACK (copy_to_clipboard_cb), 
 									away->message ? away->message : unknown);
+			gtk_widget_queue_resize(submenu);
+			gtk_widget_queue_resize(gtk_widget_get_parent(submenu));
 		}
 		else
 			missing = TRUE;
@@ -1786,7 +1796,7 @@ menu_about (GtkWidget *wid, gpointer sess)
 	gtk_about_dialog_set_website (dialog, "http://hexchat.github.io");
 	gtk_about_dialog_set_website_label (dialog, "Website");
 	gtk_about_dialog_set_logo (dialog, pix_hexchat);
-	gtk_about_dialog_set_copyright (dialog, "\302\251 1998-2010 Peter \305\275elezn\303\275\n\302\251 2009-2014 Berke Viktor");
+	gtk_about_dialog_set_copyright (dialog, "\302\251 1998-2010 Peter \305\275elezn\303\275\n\302\251 2009-2024 Berke Viktor\n\302\251 2025 Birdnest");
 	gtk_about_dialog_set_comments (dialog, comment);
 
 	gtk_window_set_transient_for (GTK_WINDOW(dialog), GTK_WINDOW(parent_window));
@@ -1916,7 +1926,7 @@ menu_set_fullscreen (session_gui *gui, int full)
 }
 
 GtkWidget *
-create_icon_menu (char *labeltext, void *stock_name, int is_stock)
+create_icon_menu (char *labeltext, void *stock_name, int is_stock, GtkWidget **labelout)
 {
 	GtkWidget *item, *img, *box, *label;
 
@@ -1928,14 +1938,22 @@ create_icon_menu (char *labeltext, void *stock_name, int is_stock)
 	else
 		img = gtk_image_new_from_pixbuf (*((GdkPixbuf **)stock_name));
 	
-	label = gtk_label_new_with_mnemonic (labeltext);
+	label = gtk_accel_label_new (labeltext);
 	gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
 	gtk_label_set_xalign (GTK_LABEL (label), 0.0);
 	gtk_label_set_yalign (GTK_LABEL (label), 0.5);
-	
+
+	if (labelout)
+		*labelout = label;
+
 	gtk_box_pack_start (GTK_BOX (box), img, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
-	
+
+	GtkStyleContext *context = gtk_widget_get_style_context(GTK_WIDGET(box));
+	GtkCssProvider *provider = gtk_css_provider_new();
+	gtk_css_provider_load_from_data(provider, "box{margin-left:-22px}", -1, NULL);
+	gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), 999);
+
 	gtk_container_add (GTK_CONTAINER (item), box);
 	gtk_widget_show_all (item);
 
@@ -2312,6 +2330,7 @@ menu_create_main (void *accel_group, int bar, int away, int toplevel,
 	GtkWidget *menu_bar;
 	GtkWidget *usermenu = 0;
 	GtkWidget *submenu = 0;
+	GtkWidget *label = NULL;
 	int close_mask = STATE_CTRL;
 	int away_mask = STATE_ALT;
 	char *key_theme = NULL;
@@ -2439,17 +2458,17 @@ menu_create_main (void *accel_group, int bar, int away, int toplevel,
 			break;
 
 		case M_MENUPIX:
-			item = create_icon_menu (_(mymenu[i].text), mymenu[i].image, FALSE);
+			item = create_icon_menu (_(mymenu[i].text), mymenu[i].image, FALSE, &label);
 			goto normalitem;
 
 		case M_MENUSTOCK:
-			item = create_icon_menu (_(mymenu[i].text), mymenu[i].image, TRUE);
+			item = create_icon_menu (_(mymenu[i].text), mymenu[i].image, TRUE, &label);
 			goto normalitem;
 
 		case M_MENUITEM:
 			item = gtk_menu_item_new_with_mnemonic (_(mymenu[i].text));
 normalitem:
-			if (mymenu[i].key != 0)
+			if (mymenu[i].key != 0) {
 				gtk_widget_add_accelerator (item, "activate", accel_group,
 										mymenu[i].key,
 										mymenu[i].key == GDK_KEY_F1 ? 0 :
@@ -2458,6 +2477,12 @@ normalitem:
 											STATE_SHIFT | STATE_CTRL :
 											STATE_CTRL,
 										GTK_ACCEL_VISIBLE);
+				if (label) {
+					gtk_accel_label_set_accel_widget (GTK_ACCEL_LABEL (label), item);					
+					label = NULL;
+				}
+			}
+
 			if (mymenu[i].callback)
 				g_signal_connect (G_OBJECT (item), "activate",
 										G_CALLBACK (mymenu[i].callback), 0);
@@ -2502,7 +2527,7 @@ togitem:
 			goto togitem;
 
 		case M_SEP:
-			item = gtk_menu_item_new ();
+			item = gtk_separator_menu_item_new ();
 			gtk_widget_set_sensitive (item, FALSE);
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 			gtk_widget_show (item);
@@ -2511,7 +2536,12 @@ togitem:
 		case M_MENUSUB:
 			group = NULL;
 			submenu = gtk_menu_new ();
-			item = create_icon_menu (_(mymenu[i].text), mymenu[i].image, TRUE);
+
+			if (mymenu[i].image)
+				item = create_icon_menu (_(mymenu[i].text), mymenu[i].image, TRUE, NULL);
+			else
+				item = gtk_menu_item_new_with_mnemonic (_(mymenu[i].text));
+
 			/* record the English name for /menu */
 			g_object_set_data (G_OBJECT (item), "name", mymenu[i].text);
 			gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);

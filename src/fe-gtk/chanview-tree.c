@@ -117,9 +117,11 @@ cv_tree_init (chanview *cv)
 
 	view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (cv->store));
 	gtk_widget_set_name (view, "hexchat-tree");
+	if (cv->style) {
+		gtk_style_context_add_provider (gtk_widget_get_style_context(view), GTK_STYLE_PROVIDER(cv->style), GTK_STYLE_PROVIDER_PRIORITY_USER);
+		gtk_widget_override_font (view, input_font);
+	}
 	/* Temporarily disabled for GTK3 migration - use CSS styling instead */
-	/* if (cv->style)
-		gtk_widget_set_style (view, cv->style); */
 	/*gtk_widget_modify_base (view, GTK_STATE_NORMAL, &colors[COL_BG]);*/
 	gtk_widget_set_can_focus (view, FALSE);
 	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);

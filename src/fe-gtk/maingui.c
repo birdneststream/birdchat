@@ -88,7 +88,8 @@ static const char chan_flags[] = { 'c', 'n', 't', 'i', 'm', 'l', 'k' };
 static chan *active_tab = NULL;	/* active tab */
 GtkWidget *parent_window = NULL;			/* the master window */
 
-GtkStyle *input_style;
+GtkCssProvider *input_style;
+PangoFontDescription *input_font;
 
 static PangoAttrList *away_list;
 static PangoAttrList *newdata_list;
@@ -1112,7 +1113,7 @@ mg_create_icon_item (char *label, char *stock, GtkWidget *menu,
 {
 	GtkWidget *item;
 
-	item = create_icon_menu (label, stock, TRUE);
+	item = create_icon_menu (label, stock, TRUE, NULL);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (callback),
 							userdata);
@@ -2068,8 +2069,7 @@ mg_apply_entry_style (GtkWidget *entry)
 	/* Temporarily disabled for GTK3 migration - use CSS instead */
 	/* gtk_widget_modify_base (entry, GTK_STATE_NORMAL, &colors[COL_BG]);
 	gtk_widget_modify_text (entry, GTK_STATE_NORMAL, &colors[COL_FG]); */
-	/* Temporarily disabled for GTK3 migration */
-	/* gtk_widget_modify_font (entry, input_style->font_desc); */
+	gtk_widget_override_font(entry, input_font);
 }
 
 static void
@@ -2489,12 +2489,13 @@ mg_create_userlist (session_gui *gui, GtkWidget *box)
 
 	gui->user_tree = ulist = userlist_create (vbox);
 
-	/* Temporarily disabled for GTK3 migration - use CSS styling instead */
-	/* if (prefs.hex_gui_ulist_style)
+	if (prefs.hex_gui_ulist_style)
 	{
-		gtk_widget_set_style (ulist, input_style);
-		gtk_widget_modify_base (ulist, GTK_STATE_NORMAL, &colors[COL_BG]);
-	} */
+		gtk_style_context_add_provider (gtk_widget_get_style_context(ulist), GTK_STYLE_PROVIDER(input_style), GTK_STYLE_PROVIDER_PRIORITY_USER);
+		gtk_widget_override_font(ulist, input_font);
+		/* Temporarily disabled for GTK3 migration - use CSS styling instead */		
+		//gtk_widget_modify_base (ulist, GTK_STATE_NORMAL, &colors[COL_BG]);
+	}
 
 	mg_create_meters (gui, vbox);
 
